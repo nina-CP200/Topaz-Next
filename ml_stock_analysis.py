@@ -469,7 +469,7 @@ class MLStockAnalyzer:
         print("=" * 80)
 
 
-def main(batch=0, limit=0):
+def main(batch=0, limit=0, market='all'):
     """
     主函数
     
@@ -479,6 +479,8 @@ def main(batch=0, limit=0):
         批量编号 (1,2,3,4)，0表示全部
     limit : int
         每批数量，0表示不限制
+    market : str
+        市场模式: 'all'-全部, 'cn'-A股, 'us'-美股
     """
     # 确定股票列表文件路径
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -486,6 +488,16 @@ def main(batch=0, limit=0):
     
     us_stocks_file = os.path.join(topaz_dir, "美股关注股票列表.md")
     a_stocks_file = os.path.join(topaz_dir, "A股关注股票列表.md")
+    
+    # 根据market参数决定分析哪些市场
+    if market == 'cn':
+        us_stocks_file = None  # 不分析美股
+        print("📊 市场模式：仅A股")
+    elif market == 'us':
+        a_stocks_file = None  # 不分析A股
+        print("📊 市场模式：仅美股")
+    else:
+        print("📊 市场模式：全部市场")
     
     # 创建分析器（默认使用多因子模型）
     analyzer = MLStockAnalyzer(use_ml=False, history_days=60, batch=batch, limit=limit)
@@ -503,9 +515,23 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Topaz 股票分析系统')
     parser.add_argument('--batch', type=int, default=0, help='批量编号 (1,2,3,4)')
     parser.add_argument('--limit', type=int, default=0, help='每批数量')
+    parser.add_argument('--cn', action='store_true', help='只分析A股市场')
+    parser.add_argument('--us', action='store_true', help='只分析美股市场')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
-    main(batch=args.batch, limit=args.limit)
+    
+    # 确定市场模式
+    if args.cn and args.us:
+        print("⚠️ 不能同时指定 --cn 和 --us，将分析全部市场")
+        market = 'all'
+    elif args.cn:
+        market = 'cn'
+    elif args.us:
+        market = 'us'
+    else:
+        market = 'all'
+    
+    main(batch=args.batch, limit=args.limit, market=market)
