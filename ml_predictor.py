@@ -88,22 +88,30 @@ class MLPredictor:
         
         print(f"✓ 模型已保存")
     
-    def prepare_features(self, df: pd.DataFrame, target_days: int = 5) -> Tuple[pd.DataFrame, pd.Series]:
+    def prepare_features(self, df: pd.DataFrame, target_days: int = 5, use_classification: bool = True) -> Tuple[pd.DataFrame, pd.Series]:
         """
         准备训练特征
         
         Args:
             df: 原始数据
             target_days: 预测未来几天的收益
+            use_classification: 使用分类（涨/跌）而非回归
         
         Returns:
             X: 特征矩阵
-            y: 目标变量（未来收益）
+            y: 目标变量（0=跌，1=涨 或 收益率）
         """
         df = df.copy()
         
         # 计算未来收益（目标变量）
         df['future_return'] = df.groupby('code')['close'].shift(-target_days) / df['close'] - 1
+        
+        # 分类目标：涨=1，跌=0
+        if use_classification:
+            df['target'] = (df['future_return'] > 0).astype(int)
+            target_col = 'target'
+        else:
+            target_col = 'future_return'
         
         # 特征列
         feature_cols = [
@@ -124,18 +132,25 @@ class MLPredictor:
         # 只保留存在的列
         self.feature_cols = [c for c in feature_cols if c in df.columns]
         
+        # 添加行业特征（one-hot编码）
+        if 'industry' in df.columns:
+            industry_dummies = pd.get_dummies(df['industry'], prefix='ind')
+            df = pd.concat([df, industry_dummies], axis=1)
+            self.feature_cols.extend(industry_dummies.columns.tolist())
+        
         # 移除NaN
-        df_clean = df.dropna(subset=self.feature_cols + ['future_return'])
+        df_clean = df.dropna(subset=self.feature_cols + [target_col])
         
         X = df_clean[self.feature_cols]
-        y = df_clean['future_return']
+        y = df_clean[target_col]
         
         return X, y
     
     def train(self, data_file: str = 'training_data.csv', 
               target_days: int = 5,
               test_size: float = 0.2,
-              cv_folds: int = 5):
+              cv_folds: int = 5,
+              use_classification: bool = True):
         """
         训练机器学习模型
         
@@ -144,6 +159,7 @@ class MLPredictor:
             target_days: 预测未来几天的收益
             test_size: 验证集比例
             cv_folds: 交叉验证折数
+            use_classification: 使用分类模型（涨/跌）而非回归
         """
         print("\n" + "="*60)
         print("机器学习模型训练")
@@ -161,7 +177,7 @@ class MLPredictor:
         
         # 准备特征
         print(f"\n准备特征...")
-        X, y = self.prepare_features(df, target_days)
+        X, y = self.prepare_features(df, target_days, use_classification)
         print(f"有效样本: {len(X):,}")
         print(f"特征数量: {len(self.feature_cols)}")
         
@@ -182,75 +198,146 @@ class MLPredictor:
         print(f"训练集: {len(X_train):,} 样本")
         print(f"验证集: {len(X_val):,} 样本")
         
-        # 训练模型
-        print(f"\n训练随机森林模型...")
-        self.model = RandomForestRegressor(
-            n_estimators=100,
-            max_depth=10,
-            min_samples_split=50,
-            min_samples_leaf=20,
-            random_state=42,
-            n_jobs=-1
-        )
+        # 选择模型类型
+        if use_classification:
+            print(f"\n训练分类模型（预测涨跌）...")
+            from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+            from sklearn.metrics import accuracy_score, precision_score, recall_score
+            
+            self.model = GradientBoostingClassifier(
+                n_estimators=150,
+                max_depth=5,
+                min_samples_split=100,
+                min_samples_leaf=50,
+                learning_rate=0.1,
+                random_state=42
+            )
+            self.model_type = 'classifier'
+        else:
+            print(f"\n训练回归模型...")
+            self.model = RandomForestRegressor(
+                n_estimators=100,
+                max_depth=10,
+                min_samples_split=50,
+                min_samples_leaf=20,
+                random_state=42,
+                n_jobs=-1
+            )
+            self.model_type = 'regressor'
         
         self.model.fit(X_train, y_train)
         
         # 评估
         print(f"\n评估模型...")
         
-        # 训练集表现
-        y_train_pred = self.model.predict(X_train)
-        r2_train = r2_score(y_train, y_train_pred)
-        mse_train = mean_squared_error(y_train, y_train_pred)
-        
-        # 验证集表现
-        y_val_pred = self.model.predict(X_val)
-        r2_val = r2_score(y_val, y_val_pred)
-        mse_val = mean_squared_error(y_val, y_val_pred)
-        mae_val = mean_absolute_error(y_val, y_val_pred)
-        
-        # 交叉验证
-        cv_scores = cross_val_score(self.model, X_scaled, y, cv=cv_folds, scoring='r2')
-        
-        # 过拟合检测
-        overfit_gap = r2_train - r2_val
-        is_overfitted = overfit_gap > self.overfit_threshold
-        is_valid = r2_val > self.min_r2
-        
-        print(f"\n{'='*60}")
-        print("模型评估结果")
-        print("="*60)
-        print(f"训练集 R²: {r2_train:.4f}")
-        print(f"验证集 R²: {r2_val:.4f}")
-        print(f"验证集 MSE: {mse_val:.6f}")
-        print(f"验证集 MAE: {mae_val:.4f}")
-        print(f"交叉验证 R²: {cv_scores.mean():.4f} (±{cv_scores.std():.4f})")
-        print(f"\n过拟合差距: {overfit_gap:.4f} (阈值: {self.overfit_threshold})")
-        
-        if is_overfitted:
-            print("⚠️  检测到过拟合！将使用多因子Fallback")
-        elif not is_valid:
-            print("⚠️  模型效果不佳！将使用多因子Fallback")
+        if self.model_type == 'classifier':
+            from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
+            
+            # 训练集表现
+            y_train_pred = self.model.predict(X_train)
+            y_train_proba = self.model.predict_proba(X_train)[:, 1]
+            
+            # 验证集表现
+            y_val_pred = self.model.predict(X_val)
+            y_val_proba = self.model.predict_proba(X_val)[:, 1]
+            
+            # 指标
+            train_acc = accuracy_score(y_train, y_train_pred)
+            val_acc = accuracy_score(y_val, y_val_pred)
+            val_precision = precision_score(y_val, y_val_pred)
+            val_recall = recall_score(y_val, y_val_pred)
+            val_f1 = f1_score(y_val, y_val_pred)
+            val_auc = roc_auc_score(y_val, y_val_proba)
+            
+            # 过拟合检测
+            overfit_gap = train_acc - val_acc
+            is_overfitted = overfit_gap > self.overfit_threshold
+            is_valid = val_acc > 0.52  # 至少比随机好一点
+            
+            print(f"\n{'='*60}")
+            print("分类模型评估结果")
+            print("="*60)
+            print(f"训练集准确率: {train_acc:.4f}")
+            print(f"验证集准确率: {val_acc:.4f}")
+            print(f"验证集精确率: {val_precision:.4f}")
+            print(f"验证集召回率: {val_recall:.4f}")
+            print(f"验证集 F1: {val_f1:.4f}")
+            print(f"验证集 AUC: {val_auc:.4f}")
+            print(f"\n过拟合差距: {overfit_gap:.4f} (阈值: {self.overfit_threshold})")
+            
+            # 更新状态
+            self.model_status = {
+                'trained': True,
+                'model_type': 'classifier',
+                'overfitted': is_overfitted,
+                'train_acc': train_acc,
+                'val_acc': val_acc,
+                'val_precision': val_precision,
+                'val_recall': val_recall,
+                'val_f1': val_f1,
+                'val_auc': val_auc,
+                'overfit_gap': overfit_gap,
+                'use_fallback': is_overfitted or not is_valid,
+                'train_time': datetime.now().isoformat(),
+                'samples': len(X),
+                'features': len(self.feature_cols),
+                'target_days': target_days
+            }
+            
         else:
-            print("✓ 模型训练成功")
-        
-        # 更新状态
-        self.model_status = {
-            'trained': True,
-            'overfitted': is_overfitted,
-            'r2_train': r2_train,
-            'r2_val': r2_val,
-            'mse_val': mse_val,
-            'mae_val': mae_val,
-            'cv_r2_mean': cv_scores.mean(),
-            'cv_r2_std': cv_scores.std(),
-            'overfit_gap': overfit_gap,
-            'use_fallback': is_overfitted or not is_valid,
-            'train_time': datetime.now().isoformat(),
-            'samples': len(X),
-            'features': len(self.feature_cols),
-            'target_days': target_days
-        }
+            # 回归模型评估
+            y_train_pred = self.model.predict(X_train)
+            r2_train = r2_score(y_train, y_train_pred)
+            mse_train = mean_squared_error(y_train, y_train_pred)
+            
+            y_val_pred = self.model.predict(X_val)
+            r2_val = r2_score(y_val, y_val_pred)
+            mse_val = mean_squared_error(y_val, y_val_pred)
+            mae_val = mean_absolute_error(y_val, y_val_pred)
+            
+            # 交叉验证
+            cv_scores = cross_val_score(self.model, X_scaled, y, cv=cv_folds, scoring='r2')
+            
+            # 过拟合检测
+            overfit_gap = r2_train - r2_val
+            is_overfitted = overfit_gap > self.overfit_threshold
+            is_valid = r2_val > self.min_r2
+            
+            print(f"\n{'='*60}")
+            print("回归模型评估结果")
+            print("="*60)
+            print(f"训练集 R²: {r2_train:.4f}")
+            print(f"验证集 R²: {r2_val:.4f}")
+            print(f"验证集 MSE: {mse_val:.6f}")
+            print(f"验证集 MAE: {mae_val:.4f}")
+            print(f"交叉验证 R²: {cv_scores.mean():.4f} (±{cv_scores.std():.4f})")
+            print(f"\n过拟合差距: {overfit_gap:.4f} (阈值: {self.overfit_threshold})")
+            
+            if is_overfitted:
+                print("⚠️  检测到过拟合！将使用多因子Fallback")
+            elif not is_valid:
+                print("⚠️  模型效果不佳！将使用多因子Fallback")
+            else:
+                print("✓ 模型训练成功")
+            
+            # 更新状态
+            self.model_status = {
+                'trained': True,
+                'model_type': 'regressor',
+                'overfitted': is_overfitted,
+                'r2_train': r2_train,
+                'r2_val': r2_val,
+                'mse_val': mse_val,
+                'mae_val': mae_val,
+                'cv_r2_mean': cv_scores.mean(),
+                'cv_r2_std': cv_scores.std(),
+                'overfit_gap': overfit_gap,
+                'use_fallback': is_overfitted or not is_valid,
+                'train_time': datetime.now().isoformat(),
+                'samples': len(X),
+                'features': len(self.feature_cols),
+                'target_days': target_days
+            }
         
         # 保存模型
         self._save_model()
@@ -316,7 +403,7 @@ class MLPredictor:
             df = self._calculate_features(df)
             
             # 取最新一行
-            latest = df.iloc[-1:][self.feature_cols]
+            latest = df.iloc[-1:][self.feature_cols[:22]]  # 只取基础特征，不含行业
             
             if latest.isna().any().any():
                 # 特征缺失，fallback
@@ -326,11 +413,23 @@ class MLPredictor:
             X = self.scaler.transform(latest)
             
             # 预测
-            pred_return = self.model.predict(X)[0]
+            if self.model_type == 'classifier':
+                pred_class = self.model.predict(X)[0]
+                pred_proba = self.model.predict_proba(X)[0]
+                
+                # 分类结果转收益预期
+                if pred_class == 1:  # 预测涨
+                    predicted_return = (pred_proba[1] - 0.5) * 0.05  # 最高预期+2.5%
+                else:  # 预测跌
+                    predicted_return = -(0.5 - pred_proba[0]) * 0.05  # 最低预期-2.5%
+                
+                result['ml_confidence'] = max(pred_proba)
+            else:
+                predicted_return = self.model.predict(X)[0]
             
             result['method'] = 'ml'
-            result['predicted_return'] = pred_return
-            result['confidence'] = 'high' if self.model_status['r2_val'] > 0.1 else 'medium'
+            result['predicted_return'] = predicted_return
+            result['confidence'] = 'high' if self.model_status.get('val_acc', 0) > 0.55 else 'medium'
             
             return result
             
@@ -445,12 +544,13 @@ def main():
     parser.add_argument('--predict', type=str, help='预测指定股票')
     parser.add_argument('--status', action='store_true', help='查看模型状态')
     parser.add_argument('--target-days', type=int, default=5, help='预测未来几天')
+    parser.add_argument('--regression', action='store_true', help='使用回归模型（默认分类）')
     args = parser.parse_args()
     
     predictor = MLPredictor()
     
     if args.train:
-        predictor.train(target_days=args.target_days)
+        predictor.train(target_days=args.target_days, use_classification=not args.regression)
     elif args.predict:
         result = predictor.predict(args.predict)
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -462,8 +562,12 @@ def main():
         status = predictor.get_status()
         print("\n模型状态:")
         print(f"  已训练: {status.get('trained', False)}")
+        print(f"  模型类型: {status.get('model_type', 'unknown')}")
         print(f"  使用Fallback: {status.get('use_fallback', True)}")
-        if status.get('trained'):
+        if status.get('model_type') == 'classifier':
+            print(f"  验证准确率: {status.get('val_acc', 0):.4f}")
+            print(f"  验证AUC: {status.get('val_auc', 0):.4f}")
+        elif status.get('trained'):
             print(f"  验证R²: {status.get('r2_val', 0):.4f}")
             print(f"  过拟合差距: {status.get('overfit_gap', 0):.4f}")
 
