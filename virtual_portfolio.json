@@ -1,0 +1,22 @@
+{
+  "name": "佩丽卡虚拟投资组合",
+  "initial_capital": 1000000,
+  "start_date": "2026-03-19",
+  "end_date": "2026-06-19",
+  "benchmark": "沪深300",
+  "cash": 1000000,
+  "positions": [],
+  "transactions": [],
+  "daily_stats": [],
+  "strategy_notes": "基于Topaz V3多因子评分，结合基本面和技术面分析，目标跑赢沪深300指数",
+  "data_policy": {
+    "a股": "交易时段每小时更新（9:30-15:00，共5次）",
+    "us_stock": "不监控，节省API费用"
+  },
+  "optimization_schedule": {
+    "first_review": "2026-04-18",
+    "second_review": "2026-05-18",
+    "final_review": "2026-06-19",
+    "task": "根据实盘表现优化Topaz V3的A股多因子权重和预测参数"
+  }
+}
