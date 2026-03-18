@@ -1,2 +1,6 @@
 requests
 python-dotenv
+lightgbm
+scikit-learn
+pandas
+numpy
