@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "name": "QuantPilot 虚拟投资组合",
+    "challenge": "3个月跑赢沪深300",
+    "start_date": "2026-03-19",
+    "end_date": "2026-06-19",
+    "initial_capital": 1000000,
+    "benchmark": "沪深300"
+  },
+  "current": {
+    "date": "2026-03-21",
+    "total_value": 998873,
+    "cash": 554009,
+    "holdings_value": 444864,
+    "total_pnl": -1127,
+    "pnl_pct": -0.11
+  },
+  "holdings": [
+    {
+      "code": "600036.SH",
+      "name": "招商银行",
+      "shares": 6200,
+      "cost_price": 39.92,
+      "current_price": 39.75,
+      "market_value": 246450,
+      "pnl": -1054,
+      "pnl_pct": -0.43,
+      "weight_pct": 24.68,
+      "analysis": {
+        "score": 58,
+        "predict_return": 2.4,
+        "risk": "低风险",
+        "recommendation": "持有",
+        "last_update": "2026-03-22"
+      }
+    },
+    {
+      "code": "600900.SH",
+      "name": "长江电力",
+      "shares": 7300,
+      "cost_price": 27.19,
+      "current_price": 27.18,
+      "market_value": 198414,
+      "pnl": -73,
+      "pnl_pct": -0.04,
+      "weight_pct": 19.86,
+      "analysis": {
+        "score": 62,
+        "predict_return": 14.7,
+        "risk": "低风险",
+        "recommendation": "持有",
+        "last_update": "2026-03-22"
+      }
+    }
+  ],
+  "pending_decisions": {
+    "date": "2026-03-21",
+    "status": "未执行",
+    "note": "周五收盘未做交易决定，待周一执行"
+  },
+  "trade_history": [
+    {
+      "date": "2026-03-19",
+      "type": "买入",
+      "code": "600036.SH",
+      "name": "招商银行",
+      "shares": 6200,
+      "price": 39.92,
+      "amount": 247504,
+      "reason": "银行龙头，估值低，安全边际高"
+    },
+    {
+      "date": "2026-03-19",
+      "type": "买入",
+      "code": "600900.SH",
+      "name": "长江电力",
+      "shares": 7300,
+      "price": 27.19,
+      "amount": 198487,
+      "reason": "防御性资产，现金流稳定"
+    }
+  ]
+}
