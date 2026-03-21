@@ -1,0 +1,502 @@
+[
+  {
+    "code": "002384",
+    "name": "东山精密",
+    "industry": "电子"
+  },
+  {
+    "code": "688223",
+    "name": "晶科能源",
+    "industry": "光伏"
+  },
+  {
+    "code": "300442",
+    "name": "润泽科技",
+    "industry": "其他"
+  },
+  {
+    "code": "601225",
+    "name": "陕西煤业",
+    "industry": "煤炭"
+  },
+  {
+    "code": "300502",
+    "name": "新易盛",
+    "industry": "光通信"
+  },
+  {
+    "code": "000617",
+    "name": "中油资本",
+    "industry": "金融"
+  },
+  {
+    "code": "300394",
+    "name": "天孚通信",
+    "industry": "光通信"
+  },
+  {
+    "code": "000938",
+    "name": "紫光股份",
+    "industry": "通信"
+  },
+  {
+    "code": "600188",
+    "name": "兖矿能源",
+    "industry": "煤炭"
+  },
+  {
+    "code": "600803",
+    "name": "新奥股份",
+    "industry": "燃气"
+  },
+  {
+    "code": "601898",
+    "name": "中煤能源",
+    "industry": "煤炭"
+  },
+  {
+    "code": "002459",
+    "name": "晶澳科技",
+    "industry": "光伏"
+  },
+  {
+    "code": "600938",
+    "name": "中国海油",
+    "industry": "石油"
+  },
+  {
+    "code": "601088",
+    "name": "中国神华",
+    "industry": "煤炭"
+  },
+  {
+    "code": "601857",
+    "name": "中国石油",
+    "industry": "石油"
+  },
+  {
+    "code": "600930",
+    "name": "华电新能",
+    "industry": "电力"
+  },
+  {
+    "code": "605117",
+    "name": "德业股份",
+    "industry": "光伏"
+  },
+  {
+    "code": "600066",
+    "name": "宇通客车",
+    "industry": "汽车"
+  },
+  {
+    "code": "600028",
+    "name": "中国石化",
+    "industry": "石油"
+  },
+  {
+    "code": "300308",
+    "name": "中际旭创",
+    "industry": "光通信"
+  },
+  {
+    "code": "600989",
+    "name": "宝丰能源",
+    "industry": "化工"
+  },
+  {
+    "code": "601012",
+    "name": "隆基绿能",
+    "industry": "光伏"
+  },
+  {
+    "code": "601868",
+    "name": "中国能建",
+    "industry": "建筑"
+  },
+  {
+    "code": "300628",
+    "name": "亿联网络",
+    "industry": "通信"
+  },
+  {
+    "code": "601939",
+    "name": "建设银行",
+    "industry": "银行"
+  },
+  {
+    "code": "002422",
+    "name": "科伦药业",
+    "industry": "医药"
+  },
+  {
+    "code": "601398",
+    "name": "工商银行",
+    "industry": "银行"
+  },
+  {
+    "code": "300274",
+    "name": "阳光电源",
+    "industry": "光伏"
+  },
+  {
+    "code": "300750",
+    "name": "宁德时代",
+    "industry": "电池"
+  },
+  {
+    "code": "002594",
+    "name": "比亚迪",
+    "industry": "汽车"
+  },
+  {
+    "code": "601985",
+    "name": "中国核电",
+    "industry": "核电"
+  },
+  {
+    "code": "001965",
+    "name": "招商公路",
+    "industry": "公路"
+  },
+  {
+    "code": "600025",
+    "name": "华能水电",
+    "industry": "电力"
+  },
+  {
+    "code": "600905",
+    "name": "三峡能源",
+    "industry": "电力"
+  },
+  {
+    "code": "600027",
+    "name": "华电国际",
+    "industry": "电力"
+  },
+  {
+    "code": "600023",
+    "name": "浙能电力",
+    "industry": "电力"
+  },
+  {
+    "code": "300014",
+    "name": "亿纬锂能",
+    "industry": "电池"
+  },
+  {
+    "code": "600674",
+    "name": "川投能源",
+    "industry": "电力"
+  },
+  {
+    "code": "601728",
+    "name": "中国电信",
+    "industry": "通信"
+  },
+  {
+    "code": "601236",
+    "name": "红塔证券",
+    "industry": "证券"
+  },
+  {
+    "code": "600377",
+    "name": "宁沪高速",
+    "industry": "公路"
+  },
+  {
+    "code": "601018",
+    "name": "宁波港",
+    "industry": "港口"
+  },
+  {
+    "code": "601288",
+    "name": "农业银行",
+    "industry": "银行"
+  },
+  {
+    "code": "000983",
+    "name": "山西焦煤",
+    "industry": "煤炭"
+  },
+  {
+    "code": "601077",
+    "name": "渝农商行",
+    "industry": "银行"
+  },
+  {
+    "code": "601808",
+    "name": "中海油服",
+    "industry": "石油"
+  },
+  {
+    "code": "688472",
+    "name": "阿特斯",
+    "industry": "光伏"
+  },
+  {
+    "code": "600941",
+    "name": "中国移动",
+    "industry": "通信"
+  },
+  {
+    "code": "002074",
+    "name": "国轩高科",
+    "industry": "电池"
+  },
+  {
+    "code": "600741",
+    "name": "华域汽车",
+    "industry": "汽车"
+  },
+  {
+    "code": "600919",
+    "name": "江苏银行",
+    "industry": "银行"
+  },
+  {
+    "code": "601988",
+    "name": "中国银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600918",
+    "name": "中泰证券",
+    "industry": "证券"
+  },
+  {
+    "code": "003816",
+    "name": "中国广核",
+    "industry": "核电"
+  },
+  {
+    "code": "300408",
+    "name": "三环集团",
+    "industry": "电子"
+  },
+  {
+    "code": "600039",
+    "name": "四川路桥",
+    "industry": "建筑"
+  },
+  {
+    "code": "600795",
+    "name": "国电电力",
+    "industry": "电力"
+  },
+  {
+    "code": "601816",
+    "name": "京沪高铁",
+    "industry": "铁路"
+  },
+  {
+    "code": "002648",
+    "name": "卫星化学",
+    "industry": "化工"
+  },
+  {
+    "code": "601006",
+    "name": "大秦铁路",
+    "industry": "铁路"
+  },
+  {
+    "code": "600900",
+    "name": "长江电力",
+    "industry": "电力"
+  },
+  {
+    "code": "601328",
+    "name": "交通银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600886",
+    "name": "国投电力",
+    "industry": "电力"
+  },
+  {
+    "code": "688303",
+    "name": "大全能源",
+    "industry": "光伏"
+  },
+  {
+    "code": "603392",
+    "name": "万泰生物",
+    "industry": "医药"
+  },
+  {
+    "code": "600018",
+    "name": "上港集团",
+    "industry": "港口"
+  },
+  {
+    "code": "600011",
+    "name": "华能国际",
+    "industry": "电力"
+  },
+  {
+    "code": "000895",
+    "name": "双汇发展",
+    "industry": "食品"
+  },
+  {
+    "code": "000538",
+    "name": "云南白药",
+    "industry": "医药"
+  },
+  {
+    "code": "600104",
+    "name": "上汽集团",
+    "industry": "汽车"
+  },
+  {
+    "code": "600887",
+    "name": "伊利股份",
+    "industry": "食品"
+  },
+  {
+    "code": "002142",
+    "name": "宁波银行",
+    "industry": "银行"
+  },
+  {
+    "code": "601229",
+    "name": "上海银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600036",
+    "name": "招商银行",
+    "industry": "银行"
+  },
+  {
+    "code": "002371",
+    "name": "北方华创",
+    "industry": "半导体"
+  },
+  {
+    "code": "600600",
+    "name": "青岛啤酒",
+    "industry": "食品"
+  },
+  {
+    "code": "000999",
+    "name": "华润三九",
+    "industry": "医药"
+  },
+  {
+    "code": "601009",
+    "name": "南京银行",
+    "industry": "银行"
+  },
+  {
+    "code": "601668",
+    "name": "中国建筑",
+    "industry": "建筑"
+  },
+  {
+    "code": "000166",
+    "name": "申万宏源",
+    "industry": "证券"
+  },
+  {
+    "code": "300124",
+    "name": "汇川技术",
+    "industry": "工控"
+  },
+  {
+    "code": "601066",
+    "name": "中信建投",
+    "industry": "证券"
+  },
+  {
+    "code": "688126",
+    "name": "沪硅产业",
+    "industry": "半导体"
+  },
+  {
+    "code": "601818",
+    "name": "光大银行",
+    "industry": "银行"
+  },
+  {
+    "code": "601166",
+    "name": "兴业银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600150",
+    "name": "中国船舶",
+    "industry": "船舶"
+  },
+  {
+    "code": "601916",
+    "name": "浙商银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600438",
+    "name": "通威股份",
+    "industry": "光伏"
+  },
+  {
+    "code": "601607",
+    "name": "上海医药",
+    "industry": "医药"
+  },
+  {
+    "code": "601169",
+    "name": "北京银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600085",
+    "name": "同仁堂",
+    "industry": "医药"
+  },
+  {
+    "code": "601658",
+    "name": "邮储银行",
+    "industry": "银行"
+  },
+  {
+    "code": "600050",
+    "name": "中国联通",
+    "industry": "通信"
+  },
+  {
+    "code": "601059",
+    "name": "信达证券",
+    "industry": "证券"
+  },
+  {
+    "code": "600061",
+    "name": "国投资本",
+    "industry": "证券"
+  },
+  {
+    "code": "601456",
+    "name": "国联民生",
+    "industry": "证券"
+  },
+  {
+    "code": "002920",
+    "name": "德赛西威",
+    "industry": "汽车电子"
+  },
+  {
+    "code": "601995",
+    "name": "中金公司",
+    "industry": "证券"
+  },
+  {
+    "code": "601825",
+    "name": "沪农商行",
+    "industry": "银行"
+  },
+  {
+    "code": "000876",
+    "name": "新 希 望",
+    "industry": "农业"
+  }
+]

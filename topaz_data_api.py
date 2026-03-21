@@ -373,13 +373,21 @@ def get_tencent_history(symbol: str, days: int = 60) -> Optional[pd.DataFrame]:
             api_symbol = 'sh' + symbol if symbol.startswith('6') else 'sz' + symbol
         
         # 新浪财经历史数据 API (使用 money.finance.sina.com.cn)
-        url = f"http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={api_symbol}&scale={days}&ma=5&mab=10"
+        # scale 参数是分钟数：日线=240（一天交易4小时）
+        scale = 240  # 日线
+        url = f"http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={api_symbol}&scale={scale}&ma=5&mab=10"
         response = requests.get(url, timeout=15, headers={'User-Agent': 'Mozilla/5.0'})
         data = response.json()
         
         if data and isinstance(data, list) and len(data) > 0:
-            df = pd.DataFrame(data, columns=['date', 'open', 'high', 'low', 'close', 'volume'])
-            # 解析日期（格式：2026-01-20 14:00:00 或 2026-01-20）
+            # API 返回的字段是 day, open, high, low, close, volume
+            df = pd.DataFrame(data)
+            # 重命名字段（兼容性）
+            if 'day' in df.columns:
+                df['date'] = df['day']
+            # 添加股票代码列
+            df['code'] = symbol
+            # 解析日期（格式：2026-01-20 10:30:00 或 2026-01-20）
             df['date'] = df['date'].astype(str)
             df['datetime'] = pd.to_datetime(df['date'].str.split(' ').str[0])
             df.set_index('datetime', inplace=True)

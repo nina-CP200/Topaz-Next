@@ -1,22 +1,73 @@
 {
-  "name": "佩丽卡虚拟投资组合",
   "initial_capital": 1000000,
-  "start_date": "2026-03-19",
+  "cash": 554009,
+  "holdings": {
+    "600036": {
+      "name": "招商银行",
+      "shares": 6200,
+      "cost_price": 39.92,
+      "current_price": 39.75
+    },
+    "600900": {
+      "name": "长江电力",
+      "shares": 7300,
+      "cost_price": 27.19,
+      "current_price": 27.18
+    }
+  },
+  "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
-  "cash": 1000000,
-  "positions": [],
-  "transactions": [],
-  "daily_stats": [],
-  "strategy_notes": "基于Topaz V3多因子评分，结合基本面和技术面分析，目标跑赢沪深300指数",
-  "data_policy": {
-    "a股": "交易时段每小时更新（9:30-15:00，共5次）",
-    "us_stock": "不监控，节省API费用"
-  },
-  "optimization_schedule": {
-    "first_review": "2026-04-18",
-    "second_review": "2026-05-18",
-    "final_review": "2026-06-19",
-    "task": "根据实盘表现优化Topaz V3的A股多因子权重和预测参数"
-  }
+  "trades": [
+    {
+      "date": "2026-03-20",
+      "time": "11:15",
+      "type": "buy",
+      "code": "600036",
+      "name": "招商银行",
+      "shares": 6200,
+      "price": 39.92,
+      "amount": 247504,
+      "reason": "Day 1建仓，银行龙头，估值合理，分红稳定"
+    },
+    {
+      "date": "2026-03-20",
+      "time": "11:15",
+      "type": "buy",
+      "code": "600900",
+      "name": "长江电力",
+      "shares": 7300,
+      "price": 27.19,
+      "amount": 198487,
+      "reason": "Day 1建仓，防御性资产，分红稳定"
+    }
+  ],
+  "daily_values": [
+    {
+      "date": "2026-03-20",
+      "time": "12:49",
+      "cash": 554009,
+      "holdings_value": 446035.0,
+      "total_value": 1000044.0,
+      "pnl": 44.0,
+      "pnl_pct": 0.0,
+      "benchmark_value": 0,
+      "benchmark_pct": 0
+    },
+    {
+      "date": "2026-03-21",
+      "time": "12:31",
+      "cash": 554009,
+      "holdings_value": 444864.0,
+      "total_value": 998873.0,
+      "pnl": -1127.0,
+      "pnl_pct": -0.11,
+      "benchmark_value": 0,
+      "benchmark_pct": 0
+    }
+  ],
+  "holdings_value": 445991.0,
+  "total_value": 1000000.0,
+  "pnl": 0.0,
+  "pnl_pct": 0.0
 }

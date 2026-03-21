@@ -1,0 +1,30 @@
+{
+  "train_time": "2026-03-19T10:44:13.846142",
+  "train_accuracy": 0.7213610865072335,
+  "val_accuracy": 0.525383707201889,
+  "overfit_gap": 0.19597737930534453,
+  "features": [
+    "ma_5",
+    "ma_10",
+    "ma_20",
+    "ma_60",
+    "rsi_14",
+    "rsi_6",
+    "macd",
+    "macd_signal",
+    "macd_hist",
+    "price_change_5d",
+    "price_change_10d",
+    "price_change_20d",
+    "volume_ratio",
+    "volatility_10d",
+    "volatility_20d"
+  ],
+  "n_samples": 16936,
+  "estimators": [
+    "RandomForest",
+    "GradientBoosting",
+    "LogisticRegression"
+  ],
+  "usable": false
+}

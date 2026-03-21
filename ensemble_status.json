@@ -1,0 +1,12 @@
+{
+  "trained": true,
+  "n_models": 3,
+  "models": [
+    "lightgbm",
+    "rf",
+    "gbdt"
+  ],
+  "val_acc": 0.6018611309949893,
+  "val_auc": 0.6469342910526531,
+  "train_time": "2026-03-19T02:51:39.419697"
+}
