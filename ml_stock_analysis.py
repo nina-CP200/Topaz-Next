@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Topaz-Qlib 机器学习训练系统
+QuantPilot 机器学习训练系统
 使用真实历史数据训练 LightGBM 模型进行股票收益预测
 
 功能:
@@ -59,7 +59,7 @@ check_and_activate_venv()
 # 添加项目路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from topaz_data_api import get_stock_data, get_history_data, get_macro_indicators
+from quantpilot_data_api import get_stock_data, get_history_data, get_macro_indicators
 from utils import parse_stock_list
 from qlib_predictor import QlibPredictor, SimpleReturnPredictor
 
@@ -310,8 +310,8 @@ class MLStockAnalyzer:
             A 股列表文件路径
         """
         print("=" * 80)
-        print("Topaz-Qlib 机器学习股票分析系统")
-        print("数据源：Topaz API (Finnhub + 腾讯财经)")
+        print("QuantPilot 机器学习股票分析系统")
+        print("数据源：QuantPilot API (Finnhub + 腾讯财经)")
         if self.use_ml:
             print("模型：LightGBM + 技术特征")
         else:
@@ -484,10 +484,10 @@ def main(batch=0, limit=0, market='all'):
     """
     # 确定股票列表文件路径
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    topaz_dir = os.path.expanduser("~/.openclaw/workspace-topaz/topaz-v3")
+    quantpilot_dir = os.path.expanduser("~/.openclaw/workspace-topaz/topaz-v3")
     
-    us_stocks_file = os.path.join(topaz_dir, "美股关注股票列表.md")
-    a_stocks_file = os.path.join(topaz_dir, "A股关注股票列表.md")
+    us_stocks_file = os.path.join(quantpilot_dir, "美股关注股票列表.md")
+    a_stocks_file = os.path.join(quantpilot_dir, "A股关注股票列表.md")
     
     # 根据market参数决定分析哪些市场
     if market == 'cn':
@@ -512,7 +512,7 @@ def main(batch=0, limit=0, market='all'):
 def parse_args():
     """解析命令行参数"""
     import argparse
-    parser = argparse.ArgumentParser(description='Topaz 股票分析系统')
+    parser = argparse.ArgumentParser(description='QuantPilot 股票分析系统')
     parser.add_argument('--batch', type=int, default=0, help='批量编号 (1,2,3,4)')
     parser.add_argument('--limit', type=int, default=0, help='每批数量')
     parser.add_argument('--cn', action='store_true', help='只分析A股市场')

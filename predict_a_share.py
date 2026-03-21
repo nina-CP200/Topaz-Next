@@ -14,8 +14,8 @@ from datetime import datetime
 import warnings
 warnings.filterwarnings('ignore')
 
-from topaz_predictor import TopazPredictor
-from topaz_data_api import get_history_data
+from quantpilot_predictor import QuantPilotPredictor
+from quantpilot_data_api import get_history_data
 
 
 def parse_a_share_list(md_file: str) -> dict:
@@ -100,7 +100,7 @@ def predict_a_share_stocks(stock_list_file: str = None, output_file: str = None)
         output_file: 输出文件路径
     """
     print("\n" + "="*70)
-    print("Topaz A股预测系统")
+    print("QuantPilot A股预测系统")
     print("="*70)
     
     # 加载股票列表
@@ -114,7 +114,7 @@ def predict_a_share_stocks(stock_list_file: str = None, output_file: str = None)
         return
     
     # 初始化预测器
-    predictor = TopazPredictor()
+    predictor = QuantPilotPredictor()
     
     # 批量预测
     results = []

@@ -15,7 +15,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 from feature_engineer import FeatureEngineer
-from topaz_data_api import get_history_data
+from quantpilot_data_api import get_history_data
 
 
 def parse_us_stock_list(md_file: str) -> dict:
@@ -128,7 +128,7 @@ def fetch_stock_data(symbol: str, days: int = 120) -> pd.DataFrame:
     print(f"  获取 {symbol} 历史数据...")
     
     try:
-        # 使用 topaz_data_api 获取数据
+        # 使用 quantpilot_data_api 获取数据
         df = get_history_data(symbol, market='美股', days=days)
         
         if df is None or len(df) < 60:
@@ -251,7 +251,7 @@ def main(symbols: list = None):
         symbols: 要预测的股票列表，None 则使用全部
     """
     print("=" * 60)
-    print("Topaz V3 美股预测")
+    print("QuantPilot 美股预测")
     print("=" * 60)
     print(f"预测时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     

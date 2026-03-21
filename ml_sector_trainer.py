@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Topaz V3 - 板块机器学习训练模块
+QuantPilot - 板块机器学习训练模块
 按板块分类训练模型，提升预测准确率
 """
 
@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 # 导入现有模块
-from topaz_data_api import get_cn_history_data, get_cn_realtime_data
+from quantpilot_data_api import get_cn_history_data, get_cn_realtime_data
 from ml_stock_analysis import MLStockAnalyzer
 
 

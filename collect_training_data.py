@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Topaz V3 - 训练数据收集器
+QuantPilot - 训练数据收集器
 收集沪深300成分股历史数据，用于机器学习训练
 """
 
@@ -16,7 +16,7 @@ from typing import List, Dict, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-from topaz_data_api import get_cn_history_data, get_cn_realtime_data
+from quantpilot_data_api import get_cn_history_data, get_cn_realtime_data
 
 
 class TrainingDataCollector:

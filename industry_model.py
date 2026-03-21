@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-行业分组ML模型 - Topaz V3
+行业分组ML模型 - QuantPilot
 按申万一级行业分组训练独立的预测模型
 """
 

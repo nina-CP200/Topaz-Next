@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Topaz 数据获取 API
-从 topaz-v3 项目整合的数据获取模块
+QuantPilot 数据获取 API
+从 QuantPilot 项目整合的数据获取模块
 支持：A 股（腾讯财经）+ 美股（Finnhub API）
 """
 

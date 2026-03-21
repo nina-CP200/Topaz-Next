@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Topaz V3 - 真正的机器学习预测模块
+QuantPilot - 真正的机器学习预测模块
 支持过拟合检测和自动fallback到多因子评分
 """
 
@@ -23,7 +23,7 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 import joblib
 
 from ml_stock_analysis import MLStockAnalyzer
-from topaz_data_api import get_cn_realtime_data, get_cn_history_data
+from quantpilot_data_api import get_cn_realtime_data, get_cn_history_data
 
 
 class MLPredictor:

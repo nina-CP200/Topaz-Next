@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 美股模型训练脚本
-训练 Topaz V3 美股预测模型
+训练 QuantPilot 美股预测模型
 """
 
 import numpy as np
@@ -291,7 +291,7 @@ def save_models(models, scaler, feature_cols, model_dir: str):
 def main():
     """主函数"""
     print("=" * 60)
-    print("Topaz V3 美股模型训练")
+    print("QuantPilot 美股模型训练")
     print("=" * 60)
     
     model_dir = os.path.dirname(os.path.abspath(__file__))

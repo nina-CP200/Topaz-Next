@@ -24,8 +24,8 @@ except ImportError:
     TORCH_AVAILABLE = False
 
 
-class TopazPredictor:
-    """Topaz预测系统 - 专业量化架构"""
+class QuantPilotPredictor:
+    """QuantPilot预测系统 - 专业量化架构"""
     
     def __init__(self, data_dir: str = '.', model_dir: str = '.'):
         self.data_dir = data_dir
@@ -68,7 +68,7 @@ class TopazPredictor:
             use_ensemble: 是否使用集成模型
         """
         print("\n" + "="*70)
-        print("Topaz 专业量化预测系统 v4.0 - 训练")
+        print("QuantPilot 专业量化预测系统 v4.0 - 训练")
         print("="*70)
         
         # 加载数据
@@ -244,7 +244,7 @@ class TopazPredictor:
     
     def _save_status(self):
         """保存状态"""
-        status_path = os.path.join(self.model_dir, 'topaz_status.json')
+        status_path = os.path.join(self.model_dir, 'quantpilot_status.json')
         with open(status_path, 'w') as f:
             json.dump(self.status, f, indent=2, ensure_ascii=False)
         print(f"\n状态已保存: {status_path}")
@@ -252,7 +252,7 @@ class TopazPredictor:
     def print_report(self):
         """打印系统报告"""
         print("\n" + "="*70)
-        print("Topaz 预测系统报告")
+        print("QuantPilot 预测系统报告")
         print("="*70)
         print(f"版本: {self.status.get('version', 'unknown')}")
         print(f"训练状态: {'已训练' if self.status.get('trained') else '未训练'}")
@@ -274,7 +274,7 @@ class TopazPredictor:
 def main():
     """主函数"""
     import argparse
-    parser = argparse.ArgumentParser(description='Topaz预测系统')
+    parser = argparse.ArgumentParser(description='QuantPilot预测系统')
     parser.add_argument('--train', action='store_true', help='训练模型')
     parser.add_argument('--predict', type=str, help='预测指定股票')
     parser.add_argument('--status', action='store_true', help='查看状态')
@@ -282,7 +282,7 @@ def main():
     parser.add_argument('--no-dl', action='store_true', help='不使用深度学习')
     args = parser.parse_args()
     
-    predictor = TopazPredictor()
+    predictor = QuantPilotPredictor()
     
     if args.train:
         predictor.train(use_dl=not args.no_dl)
