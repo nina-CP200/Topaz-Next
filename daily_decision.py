@@ -55,6 +55,7 @@ def analyze_stocks(stock_list_file: str) -> List[Dict]:
             current = get_stock_data(symbol, 'A股', name)
             
             if history is None or not current:
+                print(f"  ⚠️ {symbol} {name}: 数据获取失败，跳过")
                 continue
             
             # 生成特征
@@ -244,8 +245,8 @@ def update_portfolio(portfolio: Dict, decisions: Dict) -> Dict:
             current = get_stock_data(symbol, 'A股', holdings[symbol]['name'])
             if current:
                 holdings[symbol]['current_price'] = current.get('current_price', holdings[symbol]['cost_price'])
-        except:
-            pass
+        except Exception as e:
+            print(f"  ⚠️ 更新 {symbol} 价格失败: {e}")
     
     # 计算总资产
     holdings_value = sum(h['shares'] * h.get('current_price', h['cost_price']) for h in holdings.values())
