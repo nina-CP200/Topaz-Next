@@ -18,32 +18,46 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
-# A股关注股票列表 (腾讯/新浪格式)
-STOCKS_TENCENT = [
-    ('sh600519', '贵州茅台'),
-    ('sz000858', '五粮液'),
-    ('sh600036', '招商银行'),
-    ('sh600111', '北方稀土'),
-    ('sz002465', '海格通信'),
-    ('sh601318', '中国平安'),
-    ('sh600900', '长江电力'),
-    ('sh601166', '兴业银行'),
-    ('sh601888', '中国中免'),
-    ('sz000333', '美的集团'),
-]
+# A股关注股票列表 (腾讯/新浪格式) - 从配置文件读取
+import json
+import os
 
-STOCKS_SINA = [
-    ('sh600519', '贵州茅台'),
-    ('sz000858', '五粮液'),
-    ('sh600036', '招商银行'),
-    ('sh600111', '北方稀土'),
-    ('sz002465', '海格通信'),
-    ('sh601318', '中国平安'),
-    ('sh600900', '长江电力'),
-    ('sh601166', '兴业银行'),
-    ('sh601888', '中国中免'),
-    ('sz000333', '美的集团'),
-]
+def load_stock_list():
+    """从 csi300_stocks.json 加载股票列表"""
+    config_path = os.path.join(os.path.dirname(__file__), 'csi300_stocks.json')
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            stocks = json.load(f)
+        # 转换为腾讯/新浪格式
+        result = []
+        for s in stocks[:10]:  # 只取前10只用于实时行情
+            code = s['code']
+            name = s['name']
+            if code.startswith('6'):
+                tencent_code = f'sh{code}'
+            else:
+                tencent_code = f'sz{code}'
+            result.append((tencent_code, name))
+        return result
+    except Exception as e:
+        print(f"警告: 无法加载股票列表，使用默认列表: {e}")
+        # 默认列表
+        return [
+            ('sh600519', '贵州茅台'),
+            ('sz000858', '五粮液'),
+            ('sh600036', '招商银行'),
+            ('sh600111', '北方稀土'),
+            ('sz002465', '海格通信'),
+            ('sh601318', '中国平安'),
+            ('sh600900', '长江电力'),
+            ('sh601166', '兴业银行'),
+            ('sh601888', '中国中免'),
+            ('sz000333', '美的集团'),
+        ]
+
+# 加载股票列表
+STOCKS_TENCENT = load_stock_list()
+STOCKS_SINA = STOCKS_TENCENT
 
 def fetch_from_tencent():
     """从腾讯财经获取实时行情"""
