@@ -469,7 +469,7 @@ class MLStockAnalyzer:
         print("=" * 80)
 
 
-def main(batch=0, limit=0, market='all'):
+def main(batch=0, limit=0, market='all', use_ml=False):
     """
     主函数
     
@@ -500,7 +500,7 @@ def main(batch=0, limit=0, market='all'):
         print("📊 市场模式：全部市场")
     
     # 创建分析器（默认使用多因子模型）
-    analyzer = MLStockAnalyzer(use_ml=False, history_days=60, batch=batch, limit=limit)
+    analyzer = MLStockAnalyzer(use_ml=use_ml, history_days=60, batch=batch, limit=limit)
     
     # 运行分析
     analyzer.run(us_stocks_file, a_stocks_file)
@@ -517,6 +517,7 @@ def parse_args():
     parser.add_argument('--limit', type=int, default=0, help='每批数量')
     parser.add_argument('--cn', action='store_true', help='只分析A股市场')
     parser.add_argument('--us', action='store_true', help='只分析美股市场')
+    parser.add_argument('--ml', action='store_true', help='启用机器学习预测')
     return parser.parse_args()
 
 
@@ -534,4 +535,4 @@ if __name__ == '__main__':
     else:
         market = 'all'
     
-    main(batch=args.batch, limit=args.limit, market=market)
+    main(batch=args.batch, limit=args.limit, market=market, use_ml=args.ml)

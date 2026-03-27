@@ -100,7 +100,7 @@ def main():
     print("=" * 60)
     
     # 读取股票列表
-    with open('csi300_stocks_with_industry.json') as f:
+    with open('csi300_stocks.json') as f:
         stocks = json.load(f)
     
     industry_map = {s['code']: s.get('industry', '其他') for s in stocks}
