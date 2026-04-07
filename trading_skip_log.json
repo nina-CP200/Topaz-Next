@@ -1,0 +1,15 @@
+[
+  {
+    "date": "2026-04-06",
+    "time": "23:21:14",
+    "action": "SKIPPED",
+    "reason": "今天(2026-04-06)不是交易日，最近交易日: 2026-04-03",
+    "status": {
+      "can_trade": false,
+      "is_trading_day": false,
+      "is_trading_hours": false,
+      "last_trading_day": "2026-04-03",
+      "message": "今天(2026-04-06)不是交易日，最近交易日: 2026-04-03"
+    }
+  }
+]

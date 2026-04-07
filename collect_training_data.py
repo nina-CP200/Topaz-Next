@@ -9,6 +9,7 @@ import os
 import json
 import time
 import csv
+import requests  # 添加 requests 导入
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
@@ -16,7 +17,7 @@ from typing import List, Dict, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-from quantpilot_data_api import get_cn_history_data, get_cn_realtime_data
+from quantpilot_data_api import get_history_data, get_stock_data
 
 
 class TrainingDataCollector:
@@ -30,6 +31,7 @@ class TrainingDataCollector:
         self.failed = []
         self.rate_limited = False
         self.session_start = None
+        self.index_data = None  # 沪深300指数数据
         
         # 加载股票列表
         self._load_stock_list()
@@ -49,8 +51,55 @@ class TrainingDataCollector:
         
         print(f"加载 {len(self.stocks)} 只成分股，{len(self.stock_industry)} 只有行业映射")
     
+    def collect_index_data(self, days: int = 500) -> Optional[pd.DataFrame]:
+        """收集沪深300指数历史数据"""
+        print("\n收集沪深300指数数据...")
+        try:
+            index_code = '000300'  # 沪深300
+            url = f"http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+            params = {
+                "symbol": f"sh{index_code}",
+                "scale": 240,  # 日线
+            }
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            
+            response = requests.get(url, params=params, headers=headers, timeout=15)
+            data = response.json()
+            
+            if data and isinstance(data, list):
+                df = pd.DataFrame(data)
+                df['date'] = pd.to_datetime(df['day'].str.split(' ').str[0])
+                df['open'] = df['open'].astype(float)
+                df['high'] = df['high'].astype(float)
+                df['low'] = df['low'].astype(float)
+                df['close'] = df['close'].astype(float)
+                df['volume'] = df['volume'].astype(float)
+                
+                df = df.sort_values('date').reset_index(drop=True)
+                df = df.tail(days)  # 取最近 days 天
+                
+                self.index_data = df
+                print(f"  成功获取 {len(df)} 天指数数据")
+                return df
+            else:
+                print("  获取指数数据失败")
+                return None
+        except Exception as e:
+            print(f"  获取指数数据失败: {e}")
+            return None
+    
     def calculate_technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
         """计算技术指标"""
+        # 确保日期列存在并正确格式化
+        if 'date' not in df.columns:
+            if df.index.name == 'datetime' or hasattr(df.index, 'name'):
+                df['date'] = df.index
+            elif 'day' in df.columns:
+                df['date'] = pd.to_datetime(df['day'])
+        
         # 确保按日期排序
         df = df.sort_values('date').reset_index(drop=True)
         
@@ -113,17 +162,60 @@ class TrainingDataCollector:
         df['kdj_k'] = 100 * (df['close'] - low_min) / (high_max - low_min + 1e-10)
         df['kdj_d'] = df['kdj_k'].rolling(window=3).mean()
         
+        # ========== 新增：大盘因子 ==========
+        if self.index_data is not None:
+            df = self._add_index_factors(df)
+        
+        return df
+    
+    def _add_index_factors(self, df: pd.DataFrame) -> pd.DataFrame:
+        """添加大盘因子"""
+        try:
+            # 确保日期格式一致
+            df['date'] = pd.to_datetime(df['date'])
+            index_df = self.index_data.copy()
+            
+            # 计算指数因子
+            index_df['index_return_1d'] = index_df['close'].pct_change(1)
+            index_df['index_return_5d'] = index_df['close'].pct_change(5)
+            index_df['index_return_20d'] = index_df['close'].pct_change(20)
+            index_df['index_ma20'] = index_df['close'].rolling(20).mean()
+            index_df['index_ma_position'] = index_df['close'] / index_df['index_ma20'] - 1
+            index_df['index_volatility'] = index_df['close'].pct_change().rolling(20).std()
+            
+            # 选择需要合并的列
+            index_cols = ['date', 'close', 'index_return_1d', 'index_return_5d', 
+                          'index_return_20d', 'index_ma_position', 'index_volatility']
+            index_features = index_df[index_cols].copy()
+            index_features = index_features.rename(columns={'close': 'index_close'})
+            
+            # 合并
+            df = df.merge(index_features, on='date', how='left')
+            
+            # 计算相对强度
+            df['relative_strength_1d'] = df['return_1d'] - df['index_return_1d']
+            df['relative_strength_5d'] = df['return_5d'] - df['index_return_5d']
+            df['relative_strength_20d'] = df['return_20d'] - df['index_return_20d']
+            
+            # Beta（个股相对于大盘的弹性）
+            if len(df) >= 20:
+                covariance = df['return_1d'].rolling(20).cov(df['index_return_1d'])
+                variance = df['index_return_1d'].rolling(20).var()
+                df['beta'] = covariance / (variance + 1e-10)
+            
+        except Exception as e:
+            print(f"  添加大盘因子失败: {e}")
+        
         return df
     
     def collect_stock_data(self, code: str, days: int = 500) -> Optional[pd.DataFrame]:
         """收集单只股票的历史数据"""
         try:
-            data = get_cn_history_data(code, days=days)
-            if not data or len(data) < 60:
-                print(f"  {code}: 数据不足 ({len(data) if data else 0} 天)")
+            df = get_history_data(code, days=days)
+            if df is None or len(df) < 60:
+                print(f"  {code}: 数据不足 ({len(df) if df is not None else 0} 天)")
                 return None
             
-            df = pd.DataFrame(data)
             df['code'] = code
             df['industry'] = self.stock_industry.get(code, 'unknown')
             
@@ -152,6 +244,9 @@ class TrainingDataCollector:
         print("\n" + "="*60)
         print("训练数据收集器")
         print("="*60)
+        
+        # 先收集指数数据
+        self.collect_index_data(days)
         
         # 检查进度
         start_idx = 0
@@ -254,7 +349,12 @@ class TrainingDataCollector:
             'volume_ma5', 'volume_ratio',
             'return_1d', 'return_5d', 'return_10d', 'return_20d',
             'rsi', 'macd', 'macd_signal', 'macd_hist',
-            'bb_position', 'kdj_k', 'kdj_d'
+            'bb_position', 'kdj_k', 'kdj_d',
+            # 新增大盘因子
+            'index_close', 'index_return_1d', 'index_return_5d', 'index_return_20d',
+            'index_ma_position', 'index_volatility',
+            'relative_strength_1d', 'relative_strength_5d', 'relative_strength_20d',
+            'beta'
         ]
         
         # 只保存存在的列

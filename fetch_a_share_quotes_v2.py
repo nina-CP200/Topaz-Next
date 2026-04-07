@@ -18,19 +18,40 @@ ssl_context = ssl.create_default_context()
 ssl_context.check_hostname = False
 ssl_context.verify_mode = ssl.CERT_NONE
 
-# A股关注股票列表 (腾讯/新浪格式) - 从配置文件读取
+# A股关注股票列表 - 从 A股关注股票列表.md 读取
 import json
 import os
+from utils import parse_stock_list
 
 def load_stock_list():
-    """从 csi300_stocks.json 加载股票列表"""
+    """从 A股关注股票列表.md 加载股票列表（统一数据源）"""
+    # 优先使用 A股关注股票列表.md
+    md_path = os.path.join(os.path.dirname(__file__), 'A股关注股票列表.md')
+    try:
+        stocks = parse_stock_list(md_path)
+        if stocks:
+            # 转换为腾讯/新浪格式
+            result = []
+            for symbol, name, category in stocks:
+                # 去掉后缀 .SH/.SZ
+                code = symbol.replace('.SH', '').replace('.SZ', '')
+                if code.startswith('6'):
+                    tencent_code = f'sh{code}'
+                else:
+                    tencent_code = f'sz{code}'
+                result.append((tencent_code, name))
+            print(f"  从 A股关注股票列表.md 加载 {len(result)} 只股票")
+            return result
+    except Exception as e:
+        print(f"警告: 无法加载 A股关注股票列表.md: {e}")
+    
+    # 备用：从 csi300_stocks.json 加载（全部，不只是前10只）
     config_path = os.path.join(os.path.dirname(__file__), 'csi300_stocks.json')
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             stocks = json.load(f)
-        # 转换为腾讯/新浪格式
         result = []
-        for s in stocks[:10]:  # 只取前10只用于实时行情
+        for s in stocks:
             code = s['code']
             name = s['name']
             if code.startswith('6'):
@@ -38,6 +59,7 @@ def load_stock_list():
             else:
                 tencent_code = f'sz{code}'
             result.append((tencent_code, name))
+        print(f"  从 csi300_stocks.json 加载 {len(result)} 只股票")
         return result
     except Exception as e:
         print(f"警告: 无法加载股票列表，使用默认列表: {e}")

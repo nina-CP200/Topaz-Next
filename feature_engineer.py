@@ -167,6 +167,9 @@ class FeatureEngineer:
         df['turnover'] = df['close'] * df['volume']
         df['turnover_ma5'] = df['turnover'].rolling(5).mean()
         
+        # 添加模型期望的 volume_ratio（使用5日量比）
+        df['volume_ratio'] = df['volume_ratio_5']
+        
         return df
     
     def _technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -179,6 +182,9 @@ class FeatureEngineer:
             loss = (-delta.where(delta < 0, 0)).rolling(period).mean()
             rs = gain / (loss + 1e-8)
             df[f'rsi_{period}'] = 100 - 100 / (1 + rs)
+        
+        # 添加模型期望的 rsi（使用14日RSI）
+        df['rsi'] = df['rsi_14']
         
         # MACD
         ema12 = df['close'].ewm(span=12, adjust=False).mean()
@@ -306,9 +312,8 @@ class FeatureEngineer:
         return df
     
     def _add_market_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """市场特征（需要全市场数据）"""
+        """市场特征（大盘因子）"""
         
-        # 按日期计算市场统计
         if 'date' in df.columns:
             # 涨跌家数比
             market_stats = df.groupby('date').agg({
@@ -320,6 +325,57 @@ class FeatureEngineer:
             
             # 相对市场表现
             df['relative_return'] = df['return_1d'] - df['market_return']
+            
+            # 市场情绪指标
+            df['market_strength'] = df['advance_ratio'] * 2 - 1  # -1 到 1
+        
+        return df
+    
+    def add_index_factors(self, df: pd.DataFrame, index_df: pd.DataFrame = None) -> pd.DataFrame:
+        """
+        添加大盘指数因子（训练时使用）
+        
+        Args:
+            df: 个股数据
+            index_df: 沪深300指数数据 (date, open, high, low, close, volume)
+        
+        Returns:
+            添加了大盘因子的数据
+        """
+        if index_df is None or len(index_df) == 0:
+            # 没有指数数据，使用已有市场特征
+            return df
+        
+        # 确保日期格式一致
+        df['date'] = pd.to_datetime(df['date'])
+        index_df['date'] = pd.to_datetime(index_df['date'])
+        
+        # 计算指数因子
+        index_df['index_return_1d'] = index_df['close'].pct_change(1)
+        index_df['index_return_5d'] = index_df['close'].pct_change(5)
+        index_df['index_return_20d'] = index_df['close'].pct_change(20)
+        
+        index_df['index_ma5'] = index_df['close'].rolling(5).mean()
+        index_df['index_ma10'] = index_df['close'].rolling(10).mean()
+        index_df['index_ma20'] = index_df['close'].rolling(20).mean()
+        
+        index_df['index_ma_position'] = index_df['close'] / index_df['index_ma20'] - 1
+        index_df['index_volatility'] = index_df['close'].pct_change().rolling(20).std()
+        
+        # 选择需要合并的列
+        index_cols = ['date', 'index_return_1d', 'index_return_5d', 'index_return_20d',
+                      'index_ma_position', 'index_volatility']
+        
+        index_features = index_df[index_cols].copy()
+        
+        # 合并到个股数据
+        df = df.merge(index_features, on='date', how='left')
+        
+        # 计算相对强度因子
+        if 'return_1d' in df.columns and 'index_return_1d' in df.columns:
+            df['relative_strength_1d'] = df['return_1d'] - df['index_return_1d']
+        if 'return_5d' in df.columns and 'index_return_5d' in df.columns:
+            df['relative_strength_5d'] = df['return_5d'] - df['index_return_5d']
         
         return df
     

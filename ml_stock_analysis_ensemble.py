@@ -173,6 +173,14 @@ class MLStockAnalyzer:
         if len(df_features) < 2:
             return None
         
+        # 添加模型期望但特征工程未生成的特征（使用默认值0）
+        required_features = ['index_close', 'index_return_1d', 'index_return_5d', 'index_return_20d',
+                            'index_ma_position', 'index_volatility', 'relative_strength_1d', 
+                            'relative_strength_5d', 'relative_strength_20d', 'beta']
+        for feat in required_features:
+            if feat not in df_features.columns:
+                df_features[feat] = 0.0
+        
         # 使用模型的特征列
         feature_cols = self.predictor.feature_cols
         latest = df_features.iloc[-1:][feature_cols]
