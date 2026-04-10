@@ -1,0 +1,45 @@
+{
+  "date": "2026-04-07",
+  "time": "09:45",
+  "ml_signals": {
+    "hold": ["600030", "601012"],
+    "watch": ["002465", "000701"],
+    "avoid": ["601888", "688981", "600111"]
+  },
+  "current_holdings": {
+    "601888.SH": {"shares": 4400, "cost": 70.59, "current": 68.88},
+    "002465.SZ": {"shares": 18100, "cost": 14.44, "current": 14.43},
+    "600030.SH": {"shares": 6600, "cost": 24.22, "current": 24.01},
+    "000701.SZ": {"shares": 7900, "cost": 5.75, "current": 5.81},
+    "601012.SH": {"shares": 5000, "cost": 17.47, "current": 16.63},
+    "688981.SH": {"shares": 300, "cost": 92.40, "current": 92.55},
+    "600111.SH": {"shares": 400, "cost": 47.90, "current": 48.14}
+  },
+  "cash": 92351.0,
+  "trades": [
+    {
+      "type": "sell",
+      "code": "601888.SH",
+      "name": "中国中免",
+      "shares": 4400,
+      "price": 68.88,
+      "reason": "ML建议回避(概率26.9%,预测收益-4.6%)"
+    },
+    {
+      "type": "sell",
+      "code": "688981.SH",
+      "name": "中芯国际",
+      "shares": 300,
+      "price": 92.55,
+      "reason": "ML建议回避(概率26.9%,预测收益-4.6%)"
+    },
+    {
+      "type": "sell",
+      "code": "600111.SH",
+      "name": "北方稀土",
+      "shares": 400,
+      "price": 48.14,
+      "reason": "ML建议回避(概率26.9%,预测收益-4.6%)"
+    }
+  ]
+}

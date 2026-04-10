@@ -6,20 +6,7 @@
     "rf",
     "gbdt"
   ],
-  "val_acc": 0.8079178885630498,
-  "val_auc": 0.8784337655733536,
-  "feature_count": 36,
-  "index_features": [
-    "index_close",
-    "index_return_1d",
-    "index_return_5d",
-    "index_return_20d",
-    "index_ma_position",
-    "index_volatility",
-    "relative_strength_1d",
-    "relative_strength_5d",
-    "relative_strength_20d",
-    "beta"
-  ],
-  "train_time": "2026-04-03T14:33:57.934693"
+  "val_acc": 0.5523515641625878,
+  "val_auc": 0.5745734457137286,
+  "train_time": "2026-04-10T16:40:56.878275"
 }

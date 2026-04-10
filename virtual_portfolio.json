@@ -1,44 +1,37 @@
 {
   "initial_capital": 1000000,
-  "cash": 92351.0,
-  "holdings": {
-    "601888.SH": {
-      "shares": 4400,
-      "cost": 70.59386363636364
-    },
-    "002465.SZ": {
-      "shares": 18100,
-      "cost": 14.439502762430939
-    },
-    "600030.SH": {
-      "shares": 6600,
-      "cost": 24.220909090909092
-    },
-    "000701.SZ": {
-      "shares": 7900,
-      "cost": 5.7510126582278485
-    },
-    "601012.SH": {
-      "shares": 5000,
-      "cost": 17.4666
-    },
-    "688981.SH": {
-      "shares": 300,
-      "cost": 92.4
-    },
-    "600111.SH": {
-      "shares": 400,
-      "cost": 47.9
-    }
-  },
-  "holdings_value": 911341.0,
-  "total_value": 1003692.0,
-  "pnl": 3692.0,
-  "pnl_pct": 0.37,
+  "cash": 970955.0,
+  "holdings": {},
+  "holdings_value": 0,
+  "total_value": 970955.0,
+  "pnl": -29045.0,
+  "pnl_pct": -2.9,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
   "trades": [
+    {
+      "date": "2026-04-08",
+      "time": "09:45",
+      "type": "sell",
+      "code": "002465.SZ",
+      "name": "海格通信",
+      "shares": 18100,
+      "price": 14.7,
+      "amount": 266070.0,
+      "reason": "ML建议回避(概率9.58%,预测收益-4.0%)，执行风控卖出"
+    },
+    {
+      "date": "2026-04-08",
+      "time": "09:45",
+      "type": "sell",
+      "code": "000701.SZ",
+      "name": "厦门信达",
+      "shares": 7900,
+      "price": 6.07,
+      "amount": 47953.0,
+      "reason": "ML建议回避(概率9.62%,预测收益-4.0%)，执行风控卖出"
+    },
     {
       "date": "2026-03-20",
       "time": "11:15",
@@ -533,9 +526,127 @@
       "price": 14.4,
       "amount": 4320.0,
       "reason": "抄底加仓: 亏损-0.3%, 评分91.9%, 加仓8%"
+    },
+    {
+      "date": "2026-04-07",
+      "time": "09:46",
+      "type": "sell",
+      "code": "601888.SH",
+      "name": "中国中免",
+      "shares": 4400,
+      "price": 68.88,
+      "amount": 303072.0,
+      "reason": "ML建议回避(概率26.9%,预测收益-4.6%)"
+    },
+    {
+      "date": "2026-04-07",
+      "time": "09:46",
+      "type": "sell",
+      "code": "688981.SH",
+      "name": "中芯国际",
+      "shares": 300,
+      "price": 92.55,
+      "amount": 27765.0,
+      "reason": "ML建议回避(概率26.9%,预测收益-4.6%)"
+    },
+    {
+      "date": "2026-04-07",
+      "time": "09:46",
+      "type": "sell",
+      "code": "600111.SH",
+      "name": "北方稀土",
+      "shares": 400,
+      "price": 48.14,
+      "amount": 19256.0,
+      "reason": "ML建议回避(概率26.9%,预测收益-4.6%)"
+    },
+    {
+      "date": "2026-04-09",
+      "time": "09:45",
+      "type": "hold",
+      "code": "600030.SH",
+      "name": "中信证券",
+      "shares": 6600,
+      "price": 24.29,
+      "reason": "ML建议持有(概率56.2%,预测收益+1.25%)，维持现有仓位"
+    },
+    {
+      "date": "2026-04-10",
+      "time": "09:45",
+      "type": "hold",
+      "code": "600030.SH",
+      "name": "中信证券",
+      "shares": 6600,
+      "price": 26.0,
+      "reason": "ML建议持有(概率56.2%,预测收益+1.25%)，维持现有仓位"
+    },
+    {
+      "date": "2026-04-10",
+      "time": "09:45",
+      "type": "hold",
+      "code": "601012.SH",
+      "name": "隆基绿能",
+      "shares": 5000,
+      "price": 17.17,
+      "reason": "ML建议回避(概率低)，但市场极度悲观，暂持观望"
+    },
+    {
+      "date": "2026-04-10",
+      "time": "14:30",
+      "type": "sell",
+      "code": "600030.SH",
+      "name": "中信证券",
+      "shares": 6600,
+      "price": 25.98,
+      "amount": 171468.0,
+      "reason": "ML建议回避(概率5.6%)"
+    },
+    {
+      "date": "2026-04-10",
+      "time": "14:30",
+      "type": "sell",
+      "code": "601012.SH",
+      "name": "隆基绿能",
+      "shares": 5000,
+      "price": 17.17,
+      "amount": 85850.00000000001,
+      "reason": "ML建议回避(概率5.3%)"
     }
   ],
   "daily_values": [
+    {
+      "date": "2026-04-10",
+      "time": "09:45",
+      "cash": 713637.0,
+      "holdings_value": 257450.0,
+      "total_value": 971087.0,
+      "pnl": -28913.0,
+      "pnl_pct": -2.89,
+      "benchmark_value": 0,
+      "benchmark_pct": 0
+    },
+    {
+      "date": "2026-04-09",
+      "time": "09:45",
+      "cash": 713637.0,
+      "holdings_value": 244854.0,
+      "total_value": 958491.0,
+      "pnl": -41509.0,
+      "pnl_pct": -4.15,
+      "benchmark_value": 0,
+      "benchmark_pct": 0
+    },
+    {
+      "date": "2026-04-08",
+      "time": "09:45",
+      "cash": 713637.0,
+      "holdings_value": 245460.0,
+      "total_value": 959097.0,
+      "pnl": -40903.0,
+      "pnl_pct": -4.09,
+      "benchmark_value": 0,
+      "benchmark_pct": 0
+    },
     {
       "date": "2026-03-31",
       "time": "09:45",
@@ -756,6 +867,24 @@
       "total_value": 952972.0,
       "pnl": -47028.0,
       "pnl_pct": -4.7
+    },
+    {
+      "date": "2026-04-07",
+      "time": "09:46",
+      "cash": 442444.0,
+      "holdings_value": 548698.0,
+      "total_value": 991142.0,
+      "pnl": -8858.0,
+      "pnl_pct": -0.89
+    },
+    {
+      "date": "2026-04-10",
+      "time": "14:30",
+      "cash": 970955.0,
+      "holdings_value": 0,
+      "total_value": 970955.0,
+      "pnl": -29045.0,
+      "pnl_pct": -2.9
     }
   ]
 }

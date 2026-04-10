@@ -348,9 +348,11 @@ class FeatureEngineer:
         
         # 确保日期格式一致
         df['date'] = pd.to_datetime(df['date'])
+        index_df = index_df.copy()
         index_df['date'] = pd.to_datetime(index_df['date'])
         
         # 计算指数因子
+        index_df['index_close'] = index_df['close']
         index_df['index_return_1d'] = index_df['close'].pct_change(1)
         index_df['index_return_5d'] = index_df['close'].pct_change(5)
         index_df['index_return_20d'] = index_df['close'].pct_change(20)
@@ -362,8 +364,8 @@ class FeatureEngineer:
         index_df['index_ma_position'] = index_df['close'] / index_df['index_ma20'] - 1
         index_df['index_volatility'] = index_df['close'].pct_change().rolling(20).std()
         
-        # 选择需要合并的列
-        index_cols = ['date', 'index_return_1d', 'index_return_5d', 'index_return_20d',
+        # 选择需要合并的列（添加 index_close）
+        index_cols = ['date', 'index_close', 'index_return_1d', 'index_return_5d', 'index_return_20d',
                       'index_ma_position', 'index_volatility']
         
         index_features = index_df[index_cols].copy()
@@ -371,11 +373,24 @@ class FeatureEngineer:
         # 合并到个股数据
         df = df.merge(index_features, on='date', how='left')
         
-        # 计算相对强度因子
+        # 计算相对强度因子（添加 20d）
         if 'return_1d' in df.columns and 'index_return_1d' in df.columns:
             df['relative_strength_1d'] = df['return_1d'] - df['index_return_1d']
         if 'return_5d' in df.columns and 'index_return_5d' in df.columns:
             df['relative_strength_5d'] = df['return_5d'] - df['index_return_5d']
+        if 'return_20d' in df.columns and 'index_return_20d' in df.columns:
+            df['relative_strength_20d'] = df['return_20d'] - df['index_return_20d']
+        
+        # 计算 beta（个股相对于指数的波动率比率）
+        if 'volatility_20' in df.columns and 'index_volatility' in df.columns:
+            df['beta'] = df['volatility_20'] / (df['index_volatility'] * np.sqrt(252) + 1e-8)
+        elif 'return_1d' in df.columns and 'index_return_1d' in df.columns:
+            # 简化计算：用收益协方差估计 beta
+            window = 20
+            stock_var = df['return_1d'].rolling(window).var()
+            index_var = df['index_return_1d'].rolling(window).var()
+            cov = df['return_1d'].rolling(window).cov(df['index_return_1d'])
+            df['beta'] = cov / (index_var + 1e-8)
         
         return df
     

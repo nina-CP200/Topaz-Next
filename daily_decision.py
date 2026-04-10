@@ -4,6 +4,10 @@
 Topaz 每日投资决策系统
 根据 ML 分析结果生成投资建议并更新虚拟投资组合
 支持大盘环境判断和条件策略
+
+运行模式：
+  --execute  : 执行交易（默认）
+  --preview  : 预告模式，只生成决策建议，不执行交易
 """
 
 import os
@@ -12,6 +16,7 @@ import json
 import pandas as pd
 from datetime import datetime
 from typing import Dict, List, Optional
+import argparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -21,6 +26,7 @@ from quantpilot_data_api import get_history_data, get_stock_data
 from utils import parse_stock_list
 from market_data import (
     get_index_data, 
+    get_index_history,
     get_market_sentiment, 
     judge_market_environment,
     get_market_adjusted_thresholds
@@ -55,6 +61,14 @@ def analyze_stocks(stock_list_file: str) -> List[Dict]:
     stocks = parse_stock_list(stock_list_file)
     results = []
     
+    # 获取沪深300指数历史数据（用于生成指数因子）
+    print("📊 获取沪深300指数历史数据...")
+    index_history = get_index_history('000300.SH', days=60)
+    if index_history is None:
+        print("  ⚠️ 无法获取指数数据，将缺少指数因子")
+    else:
+        print(f"  ✓ 获取 {len(index_history)} 天指数数据")
+    
     for symbol, name, category in stocks[:25]:  # 限制 25 只
         try:
             # 获取数据
@@ -68,6 +82,11 @@ def analyze_stocks(stock_list_file: str) -> List[Dict]:
             # 生成特征
             history['code'] = symbol
             df_features = fe.generate_all_features(history)
+            
+            # 添加指数因子（大盘因子）
+            if index_history is not None:
+                df_features = fe.add_index_factors(df_features, index_history)
+            
             df_features = df_features.fillna(0)
             
             # 预测
@@ -82,21 +101,21 @@ def analyze_stocks(stock_list_file: str) -> List[Dict]:
             expected_return = (proba - 0.5) * 20  # 转换为百分比
             
             # 风险等级
-            if proba >= 0.7:
+            if proba >= 0.65:
                 risk_level = '低风险'
-            elif proba >= 0.55:
+            elif proba >= 0.50:
                 risk_level = '中风险'
-            elif proba >= 0.4:
+            elif proba >= 0.40:
                 risk_level = '高风险'
             else:
                 risk_level = '极高风险'
             
-            # 投资建议
-            if proba >= 0.7:
+            # 投资建议（调整阈值匹配新模型）
+            if proba >= 0.60:
                 advice = '建议买入'
-            elif proba >= 0.55:
+            elif proba >= 0.50:
                 advice = '建议持有'
-            elif proba >= 0.4:
+            elif proba >= 0.40:
                 advice = '建议观望'
             else:
                 advice = '建议回避'
@@ -202,7 +221,7 @@ def generate_decision(results: List[Dict], portfolio: Dict) -> Dict:
     # 计算总资产（用于持仓集中度检查）
     total_value = portfolio.get('total_value', portfolio.get('cash', 0))
     for symbol, h in holdings.items():
-        total_value += h['shares'] * h.get('current_price', h['cost_price'])
+        total_value += h['shares'] * h.get('current_price', h['cost'])
     
     for stock in hold_candidates:
         symbol = stock['symbol']
@@ -210,7 +229,7 @@ def generate_decision(results: List[Dict], portfolio: Dict) -> Dict:
             continue
             
         holding = holdings[symbol]
-        cost_price = holding['cost_price']
+        cost_price = holding['cost']
         current_price = stock['current_price']
         pnl_pct = (current_price - cost_price) / cost_price
         prob = stock['probability']
@@ -328,7 +347,7 @@ def generate_decision(results: List[Dict], portfolio: Dict) -> Dict:
             continue
             
         holding = holdings[symbol]
-        cost_price = holding['cost_price']
+        cost_price = holding['cost']
         current_price = stock['current_price']
         pnl_pct = (current_price - cost_price) / cost_price
         
@@ -449,18 +468,18 @@ def update_portfolio(portfolio: Dict, decisions: Dict) -> Dict:
         if symbol in holdings:
             # 加仓
             old_shares = holdings[symbol]['shares']
-            old_cost = holdings[symbol]['cost_price']
+            old_cost = holdings[symbol]['cost']
             new_shares = old_shares + buy['shares']
             new_cost = (old_cost * old_shares + buy['price'] * buy['shares']) / new_shares
             
             holdings[symbol]['shares'] = new_shares
-            holdings[symbol]['cost_price'] = new_cost
+            holdings[symbol]['cost'] = new_cost
         else:
             # 新建仓
             holdings[symbol] = {
                 'name': buy['name'],
                 'shares': buy['shares'],
-                'cost_price': buy['price'],
+                'cost': buy['price'],
                 'current_price': buy['price']
             }
         
@@ -482,12 +501,12 @@ def update_portfolio(portfolio: Dict, decisions: Dict) -> Dict:
         try:
             current = get_stock_data(symbol, 'A股', holdings[symbol]['name'])
             if current:
-                holdings[symbol]['current_price'] = current.get('current_price', holdings[symbol]['cost_price'])
+                holdings[symbol]['current_price'] = current.get('current_price', holdings[symbol]['cost'])
         except Exception as e:
             print(f"  ⚠️ 更新 {symbol} 价格失败: {e}")
     
     # 计算总资产
-    holdings_value = sum(h['shares'] * h.get('current_price', h['cost_price']) for h in holdings.values())
+    holdings_value = sum(h['shares'] * h.get('current_price', h['cost']) for h in holdings.values())
     total_value = cash + holdings_value
     pnl = total_value - portfolio['initial_capital']
     pnl_pct = pnl / portfolio['initial_capital'] * 100
@@ -574,6 +593,17 @@ def find_stock_list_file(base_dir: str, prefix: str) -> str:
 
 def main():
     """主函数"""
+    # 解析命令行参数
+    parser = argparse.ArgumentParser(description='Topaz 每日投资决策系统')
+    parser.add_argument('--preview', action='store_true', 
+                        help='预告模式：只生成决策建议，不执行交易')
+    parser.add_argument('--execute', action='store_true', default=True,
+                        help='执行模式：分析并执行交易（默认）')
+    args = parser.parse_args()
+    
+    # 判断运行模式
+    is_preview_mode = args.preview
+    
     base_dir = os.path.dirname(os.path.abspath(__file__))
     portfolio_file = os.path.join(base_dir, 'virtual_portfolio.json')
     stock_list_file = find_stock_list_file(base_dir, 'A股')
@@ -595,16 +625,22 @@ def main():
     print("🤖 生成投资决策...")
     decisions = generate_decision(results, portfolio)
     
-    # 更新投资组合
-    print("💼 更新投资组合...")
-    portfolio = update_portfolio(portfolio, decisions)
-    
-    # 保存
-    save_portfolio(portfolio, portfolio_file)
-    print(f"✓ 投资组合已保存：{portfolio_file}")
-    
-    # 打印报告
-    print_report(decisions, portfolio)
+    # 根据模式处理
+    if is_preview_mode:
+        print("\n⚠️ [预告模式] 以下决策仅供参考，不执行实际交易")
+        print_report(decisions, portfolio)
+        print("\n📌 预告完成，投资组合未更新")
+    else:
+        # 执行模式：更新投资组合
+        print("💼 更新投资组合...")
+        portfolio = update_portfolio(portfolio, decisions)
+        
+        # 保存
+        save_portfolio(portfolio, portfolio_file)
+        print(f"✓ 投资组合已保存：{portfolio_file}")
+        
+        # 打印报告
+        print_report(decisions, portfolio)
 
 
 if __name__ == '__main__':
