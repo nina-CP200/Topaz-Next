@@ -314,20 +314,22 @@ class FeatureEngineer:
     def _add_market_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """市场特征（大盘因子）"""
         
-        if 'date' in df.columns:
-            # 涨跌家数比
-            market_stats = df.groupby('date').agg({
-                'return_1d': ['mean', 'std', lambda x: (x > 0).sum() / len(x)]
-            }).reset_index()
-            market_stats.columns = ['date', 'market_return', 'market_volatility', 'advance_ratio']
-            
-            df = df.merge(market_stats, on='date', how='left')
-            
-            # 相对市场表现
-            df['relative_return'] = df['return_1d'] - df['market_return']
-            
-            # 市场情绪指标
-            df['market_strength'] = df['advance_ratio'] * 2 - 1  # -1 到 1
+        if 'date' in df.columns and 'code' in df.columns:
+            n_stocks = df['code'].nunique()
+            if n_stocks >= 5:
+                market_stats = df.groupby('date').agg({
+                    'return_1d': ['mean', 'std', lambda x: (x > 0).sum() / len(x)]
+                }).reset_index()
+                market_stats.columns = ['date', 'market_return', 'market_volatility', 'advance_ratio']
+                
+                df = df.merge(market_stats, on='date', how='left')
+                
+                df['relative_return'] = df['return_1d'] - df['market_return']
+                df['market_strength'] = df['advance_ratio'] * 2 - 1
+        
+        for col in ['market_return', 'market_volatility', 'advance_ratio', 'relative_return', 'market_strength']:
+            if col not in df.columns:
+                df[col] = 0.0
         
         return df
     

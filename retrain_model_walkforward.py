@@ -72,13 +72,13 @@ class WalkForwardTrainer:
         df['date'] = pd.to_datetime(df['date'])
         df = df.sort_values(['code', 'date']).reset_index(drop=True)
         
-        # 计算未来收益
         df['future_return'] = df.groupby('code')['close'].transform(
             lambda x: x.shift(-self.forward_days) / x - 1
         )
         
-        # 生成标签
-        df['target'] = (df['future_return'] > self.return_threshold).astype(int)
+        market_median = df.groupby('date')['future_return'].transform('median')
+        df['target'] = ((df['future_return'] > self.return_threshold) | 
+                        (df['future_return'] > market_median * 1.2)).astype(int)
         
         return df
     
@@ -162,32 +162,30 @@ class WalkForwardTrainer:
         # 训练模型
         models = {}
         
-        # LightGBM
         lgb_model = lgb.LGBMClassifier(
-            n_estimators=100,
-            learning_rate=0.1,
-            max_depth=6,
+            n_estimators=50,
+            learning_rate=0.15,
+            max_depth=5,
             random_state=42,
-            verbose=-1
+            verbose=-1,
+            n_jobs=-1
         )
         lgb_model.fit(X_train_scaled, y_train)
         models['lightgbm'] = lgb_model
         
-        # Random Forest
         rf_model = RandomForestClassifier(
-            n_estimators=100,
-            max_depth=10,
+            n_estimators=50,
+            max_depth=8,
             random_state=42,
             n_jobs=-1
         )
         rf_model.fit(X_train_scaled, y_train)
         models['rf'] = rf_model
         
-        # Gradient Boosting
         gb_model = GradientBoostingClassifier(
-            n_estimators=100,
-            learning_rate=0.1,
-            max_depth=4,
+            n_estimators=50,
+            learning_rate=0.15,
+            max_depth=3,
             random_state=42
         )
         gb_model.fit(X_train_scaled, y_train)
@@ -271,19 +269,22 @@ class WalkForwardTrainer:
         print("="*60)
         
         all_results = []
-        max_folds = min(5, len(splits))  # 最多训练5个fold
+        max_folds = min(3, len(splits))
         
         for i, (train_start, train_end, test_start, test_end) in enumerate(splits[:max_folds]):
             print(f"\n📈 Fold {i+1}/{max_folds}")
             print(f"  训练集: {dates[train_start]} ~ {dates[train_end-1]} ({train_end-train_start}天)")
             print(f"  测试集: {dates[test_start]} ~ {dates[test_end-1]} ({test_end-test_start}天)")
             
-            # 获取索引
             train_mask = (df['date'] >= dates[train_start]) & (df['date'] < dates[train_end])
             test_mask = (df['date'] >= dates[test_start]) & (df['date'] < dates[test_end])
             
             train_indices = df[train_mask].index.values
             test_indices = df[test_mask].index.values
+            
+            if len(train_indices) > 50000:
+                np.random.seed(42)
+                train_indices = np.random.choice(train_indices, 50000, replace=False)
             
             # 训练
             result = self.train_single_fold(df, feature_cols, train_indices, test_indices)
@@ -367,12 +368,12 @@ def main():
     
     # 创建训练器（简化参数，减少训练时间）
     trainer = WalkForwardTrainer(
-        initial_train_window=300,   # 1.5年训练数据
-        roll_step=30,               # 每1.5月滚动
-        prediction_window=20,       # 预测1个月
-        purge_gap=5,                # 5天清除间隔
-        forward_days=5,             # 预测5天收益
-        return_threshold=0.02       # 2%上涨阈值
+        initial_train_window=300,
+        roll_step=30,
+        prediction_window=20,
+        purge_gap=5,
+        forward_days=5,
+        return_threshold=0.01
     )
     
     # 执行训练

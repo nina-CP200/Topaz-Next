@@ -62,16 +62,21 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
     # 如果使用沪深300模型，加载专门的模型
     if use_csi300_model:
         import joblib
-        # 优先使用2年数据模型
-        if os.path.exists('ensemble_model_csi300_2y.pkl'):
-            model_data = joblib.load('ensemble_model_csi300_2y.pkl')
+        model_path = None
+        if os.path.exists('ensemble_model_csi300_latest.pkl'):
+            model_path = 'ensemble_model_csi300_latest.pkl'
+            print("📦 已加载沪深300 Walk-Forward 模型")
+        elif os.path.exists('ensemble_model_csi300_2y.pkl'):
+            model_path = 'ensemble_model_csi300_2y.pkl'
             print("📦 已加载沪深300专用模型（2年数据）")
         elif os.path.exists('ensemble_model_csi300.pkl'):
-            model_data = joblib.load('ensemble_model_csi300.pkl')
+            model_path = 'ensemble_model_csi300.pkl'
             print("📦 已加载沪深300专用模型")
         else:
             print("⚠️ 未找到沪深300专用模型，使用默认模型")
             return {'all_results': [], 'watchlist_results': []}
+        
+        model_data = joblib.load(model_path)
         
         ensemble.models = model_data['models']
         ensemble.feature_cols = model_data['feature_cols']
@@ -94,14 +99,7 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
         except Exception as e:
             print(f"⚠️ 加载关注列表失败: {e}")
     
-    # 选择要分析的股票：持仓 + 关注 + 随机100只
-    import random
-    from datetime import datetime
-    # 使用当前日期作为随机种子，确保每天不同但同一天可重复
-    today = datetime.now().strftime('%Y%m%d')
-    random.seed(int(today))
-    
-    # 获取持仓股票代码
+    # 选择要分析的股票：持仓 + 关注 + 全量沪深300
     holdings = portfolio.get('holdings', {}) if portfolio else {}
     holding_symbols = set(holdings.keys())
     
@@ -111,15 +109,13 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
     # 关注列表股票（不包括持仓）
     watch_stocks = [(s, n, c) for s, n, c in stocks if s in watchlist_symbols and s not in holding_symbols]
     
-    # 随机选择100只（不包括持仓和关注）
-    available_stocks = [(s, n, c) for s, n, c in stocks if s not in holding_symbols and s not in watchlist_symbols]
-    n_random = min(100, len(available_stocks))
-    random_stocks = random.sample(available_stocks, n_random) if available_stocks else []
+    # 全量分析：使用所有沪深300成分股（不包括持仓和关注）
+    all_csi300_stocks = [(s, n, c) for s, n, c in stocks if s not in holding_symbols and s not in watchlist_symbols]
     
-    # 合并股票列表（持仓优先，然后关注，然后随机）
-    selected_stocks = holding_stocks + watch_stocks + random_stocks
+    # 合并股票列表（持仓优先，然后关注，然后全量）
+    selected_stocks = holding_stocks + watch_stocks + all_csi300_stocks
     
-    print(f"📋 分析股票: {len(holding_stocks)} 持仓 + {len(watch_stocks)} 关注 + {len(random_stocks)} 随机 = {len(selected_stocks)} 只")
+    print(f"📋 分析股票: {len(holding_stocks)} 持仓 + {len(watch_stocks)} 关注 + {len(all_csi300_stocks)} 全量 = {len(selected_stocks)} 只")
     
     results = []
     
@@ -262,12 +258,12 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
     holdings = portfolio.get('holdings', {})
     hold_candidates = [r for r in results if r['symbol'] in holdings]
     
-    # 决策
     decisions = {
         'buy': [],
         'sell': [],
         'hold': [],
-        'watchlist': watchlist_results if watchlist_results else [],  # 关注列表分析结果
+        'watchlist': watchlist_results if watchlist_results else [],
+        'all_results': results,
         'market_info': {
             'environment': market_env,
             'index_price': index_data.get('price', 0) if index_data else 0,
@@ -609,7 +605,29 @@ def print_report(decisions: Dict, portfolio: Dict):
     print("=" * 80)
     print(f"报告时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
     
-    # 大盘环境信息
+    all_results = decisions.get('all_results', [])
+    if all_results:
+        sorted_by_prob = sorted(all_results, key=lambda x: x['probability'], reverse=True)
+        
+        print("\n🟢 Top 5 建议买入（最高概率）")
+        print("-" * 80)
+        for i, stock in enumerate(sorted_by_prob[:5], 1):
+            print(f"  #{i} {stock['symbol']} {stock['name']}: 概率 {stock['probability']:.1%} | 预期收益 {stock['predicted_return']:+.1f}%")
+        
+        print("\n🔴 Bottom 5 建议回避（最低概率）")
+        print("-" * 80)
+        for i, stock in enumerate(sorted_by_prob[-5:][::-1], 1):
+            print(f"  #{i} {stock['symbol']} {stock['name']}: 概率 {stock['probability']:.1%} | 预期收益 {stock['predicted_return']:+.1f}%")
+        
+        holdings = portfolio.get('holdings', {})
+        if holdings:
+            low_prob_holdings = [r for r in all_results if r['symbol'] in holdings and r['probability'] < 0.40]
+            if low_prob_holdings:
+                print("\n⚠️ 持仓低概率警告（<40%）")
+                print("-" * 80)
+                for stock in low_prob_holdings:
+                    print(f"  {stock['symbol']} {stock['name']}: 概率 {stock['probability']:.1%} | 建议 {stock['advice']}")
+    
     if 'market_info' in decisions:
         mi = decisions['market_info']
         print(f"\n📈 大盘环境")
