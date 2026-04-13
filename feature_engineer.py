@@ -387,12 +387,26 @@ class FeatureEngineer:
         if 'volatility_20' in df.columns and 'index_volatility' in df.columns:
             df['beta'] = df['volatility_20'] / (df['index_volatility'] * np.sqrt(252) + 1e-8)
         elif 'return_1d' in df.columns and 'index_return_1d' in df.columns:
-            # 简化计算：用收益协方差估计 beta
             window = 20
             stock_var = df['return_1d'].rolling(window).var()
             index_var = df['index_return_1d'].rolling(window).var()
             cov = df['return_1d'].rolling(window).cov(df['index_return_1d'])
             df['beta'] = cov / (index_var + 1e-8)
+        
+        df['combo_vol_rs'] = 0
+        if 'index_volatility' in df.columns and 'relative_strength_20d' in df.columns:
+            vol_low = df['index_volatility'] < df['index_volatility'].rolling(60).quantile(0.3)
+            rs_high = df['relative_strength_20d'] > df['relative_strength_20d'].rolling(60).quantile(0.7)
+            df['combo_vol_rs'] = (vol_low & rs_high).astype(int)
+        
+        df['combo_index_dd'] = 0
+        if 'index_close' in df.columns and 'max_drawdown_20' in df.columns:
+            index_low = df['index_close'] < df['index_close'].rolling(60).quantile(0.3)
+            dd_small = df['max_drawdown_20'] > df['max_drawdown_20'].rolling(60).quantile(0.7)
+            df['combo_index_dd'] = (index_low & dd_small).astype(int)
+        
+        if 'index_volatility' in df.columns:
+            df['market_regime'] = pd.cut(df['index_volatility'], bins=5, labels=[0,1,2,3,4]).astype(float)
         
         return df
     

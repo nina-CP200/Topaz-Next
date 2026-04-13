@@ -67,7 +67,7 @@ class WalkForwardTrainer:
         self.performance_history = []
         
     def generate_labels(self, df: pd.DataFrame) -> pd.DataFrame:
-        """生成训练标签"""
+        """生成训练标签 - 横截面排名目标"""
         df = df.copy()
         df['date'] = pd.to_datetime(df['date'])
         df = df.sort_values(['code', 'date']).reset_index(drop=True)
@@ -76,27 +76,60 @@ class WalkForwardTrainer:
             lambda x: x.shift(-self.forward_days) / x - 1
         )
         
-        market_median = df.groupby('date')['future_return'].transform('median')
-        df['target'] = ((df['future_return'] > self.return_threshold) | 
-                        (df['future_return'] > market_median * 1.2)).astype(int)
+        df['return_rank'] = df.groupby('date')['future_return'].transform(
+            lambda x: x.rank(pct=True)
+        )
+        
+        df['target'] = (df['return_rank'] > 0.67).astype(int)
+        
+        df['excess_return'] = df.groupby('date')['future_return'].transform(
+            lambda x: x - x.mean()
+        )
+        
+        valid = df[df['future_return'].notna()]
+        print(f"  目标分布: 前1/3占比={valid['target'].mean():.2%}")
         
         return df
     
     def prepare_features(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
-        """准备特征"""
-        # 定义特征列（排除非特征列）
+        """准备特征 - 个股特异性特征为主"""
         exclude_cols = ['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'name',
-                        'future_return', 'target']
+                        'future_return', 'target', 'return_rank', 'excess_return']
         
-        feature_cols = [col for col in df.columns 
+        alpha_features = [
+            'rsi_14', 'rsi_6', 'macd', 'macd_hist', 'macd_signal',
+            'bb_position', 'bb_width', 'cci', 'williams_r',
+            'momentum_5', 'momentum_10', 'momentum_accel',
+            'volatility_5', 'volatility_10', 'volatility_20',
+            'volume_ratio_5', 'volume_ratio_10', 'volume_ratio_20',
+            'obv', 'turnover', 'amihud',
+            'price_position_10', 'price_position_20', 'close_position',
+            'return_1d', 'return_3d', 'return_5d',
+            'max_drawdown_20', 'sharpe_proxy',
+            'consecutive_up', 'consecutive_down', 'gap',
+            'is_hammer', 'is_shooting_star', 'is_engulfing',
+            'ma5_slope', 'ma10_slope', 'ma20_slope',
+            'adx', 'atr_ratio', 'tr_14',
+            'kurtosis_20', 'skewness_20',
+            'return_autocorr_5', 'mean_reversion_20',
+            'body_ratio', 'upper_shadow', 'lower_shadow'
+        ]
+        
+        feature_cols = [col for col in alpha_features if col in df.columns]
+        
+        if len(feature_cols) < 10:
+            all_cols = [col for col in df.columns 
                        if col not in exclude_cols 
                        and df[col].dtype in ['float64', 'int64']]
+            feature_cols = all_cols[:30]
         
-        # 清理无穷大值
         for col in feature_cols:
             df[col] = df[col].replace([np.inf, -np.inf], np.nan)
-            df[col] = df[col].fillna(0)
+            df[col] = df[col].fillna(df[col].median() if df[col].notna().any() else 0)
             df[col] = df[col].clip(-1e10, 1e10)
+        
+        print(f"  alpha特征数: {len(feature_cols)}")
+        print(f"  特征列表: {feature_cols[:10]}...")
         
         return df, feature_cols
     
@@ -138,34 +171,38 @@ class WalkForwardTrainer:
                          test_indices: np.ndarray) -> Dict:
         """训练单个折叠"""
         
-        # 准备数据
+        sample_size = 30000
+        
         df_train = df.iloc[train_indices].copy()
         df_test = df.iloc[test_indices].copy()
         
-        # 过滤有效样本
         df_train = df_train.dropna(subset=feature_cols + ['target'])
         df_test = df_test.dropna(subset=feature_cols + ['target'])
         
         if len(df_train) < 100 or len(df_test) < 10:
             return None
         
+        if len(df_train) > sample_size:
+            df_train = df_train.sample(n=sample_size, random_state=42)
+        
         X_train = df_train[feature_cols].values
         y_train = df_train['target'].values
         X_test = df_test[feature_cols].values
         y_test = df_test['target'].values
         
-        # 训练标准化器
         scaler = StandardScaler()
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
         
-        # 训练模型
         models = {}
         
         lgb_model = lgb.LGBMClassifier(
-            n_estimators=50,
-            learning_rate=0.15,
-            max_depth=5,
+            n_estimators=100,
+            learning_rate=0.05,
+            max_depth=4,
+            min_child_samples=20,
+            reg_alpha=0.1,
+            reg_lambda=0.1,
             random_state=42,
             verbose=-1,
             n_jobs=-1
@@ -174,8 +211,9 @@ class WalkForwardTrainer:
         models['lightgbm'] = lgb_model
         
         rf_model = RandomForestClassifier(
-            n_estimators=50,
-            max_depth=8,
+            n_estimators=100,
+            max_depth=6,
+            min_samples_leaf=10,
             random_state=42,
             n_jobs=-1
         )
@@ -183,9 +221,10 @@ class WalkForwardTrainer:
         models['rf'] = rf_model
         
         gb_model = GradientBoostingClassifier(
-            n_estimators=50,
-            learning_rate=0.15,
+            n_estimators=80,
+            learning_rate=0.05,
             max_depth=3,
+            min_samples_leaf=10,
             random_state=42
         )
         gb_model.fit(X_train_scaled, y_train)
@@ -200,19 +239,38 @@ class WalkForwardTrainer:
         avg_proba = np.mean(predictions, axis=0)
         y_pred = (avg_proba >= 0.5).astype(int)
         
-        # 计算指标
         accuracy = accuracy_score(y_test, y_pred)
         auc = roc_auc_score(y_test, avg_proba) if len(np.unique(y_test)) > 1 else 0.5
         
-        # 计算策略收益（模拟）
+        if 'future_return' in df_test.columns:
+            actual_returns = df_test['future_return'].values
+            valid_mask = ~np.isnan(actual_returns) & ~np.isnan(avg_proba)
+            
+            if valid_mask.sum() > 10:
+                ic = np.corrcoef(actual_returns[valid_mask], avg_proba[valid_mask])[0, 1]
+                
+                rank_actual = pd.Series(actual_returns[valid_mask]).rank()
+                rank_pred = pd.Series(avg_proba[valid_mask]).rank()
+                rank_ic = np.corrcoef(rank_actual, rank_pred)[0, 1]
+            else:
+                ic = 0
+                rank_ic = 0
+        else:
+            ic = 0
+            rank_ic = 0
+        
         df_test_copy = df_test.copy()
         df_test_copy['pred_proba'] = avg_proba
         df_test_copy['pred'] = y_pred
-        df_test_copy['strategy_return'] = np.where(
-            df_test_copy['pred'] == 1,
-            df_test_copy['future_return'],
-            0  # 不持仓时收益为0
-        )
+        
+        if 'future_return' in df_test.columns:
+            df_test_copy['strategy_return'] = np.where(
+                df_test_copy['pred_proba'] > 0.5,
+                df_test_copy['future_return'],
+                0
+            )
+        else:
+            df_test_copy['strategy_return'] = 0
         
         returns = df_test_copy['strategy_return'].values
         sharpe = calculate_sharpe_ratio(returns)
@@ -227,6 +285,8 @@ class WalkForwardTrainer:
             'feature_cols': feature_cols,
             'accuracy': accuracy,
             'auc': auc,
+            'ic': ic,
+            'rank_ic': rank_ic,
             'sharpe': sharpe,
             'max_drawdown': max_dd,
             'train_size': len(X_train),
@@ -269,7 +329,7 @@ class WalkForwardTrainer:
         print("="*60)
         
         all_results = []
-        max_folds = min(3, len(splits))
+        max_folds = min(5, len(splits))
         
         for i, (train_start, train_end, test_start, test_end) in enumerate(splits[:max_folds]):
             print(f"\n📈 Fold {i+1}/{max_folds}")
@@ -282,15 +342,13 @@ class WalkForwardTrainer:
             train_indices = df[train_mask].index.values
             test_indices = df[test_mask].index.values
             
-            if len(train_indices) > 50000:
-                np.random.seed(42)
-                train_indices = np.random.choice(train_indices, 50000, replace=False)
+            sample_size = 30000
             
             # 训练
             result = self.train_single_fold(df, feature_cols, train_indices, test_indices)
             
             if result:
-                print(f"  ✅ 准确率: {result['accuracy']:.4f}, AUC: {result['auc']:.4f}, Sharpe: {result['sharpe']:.4f}, 最大回撤: {result['max_drawdown']:.4f}")
+                print(f"  ✅ AUC: {result['auc']:.3f}, IC: {result['ic']:.3f}, Rank-IC: {result['rank_ic']:.3f}")
                 all_results.append(result)
                 self.models_history.append({
                     'fold': i+1,
@@ -310,19 +368,18 @@ class WalkForwardTrainer:
         if all_results:
             avg_accuracy = np.mean([r['accuracy'] for r in all_results])
             avg_auc = np.mean([r['auc'] for r in all_results])
-            avg_sharpe = np.mean([r['sharpe'] for r in all_results])
-            avg_max_dd = np.mean([r['max_drawdown'] for r in all_results])
+            avg_ic = np.mean([r['ic'] for r in all_results])
+            avg_rank_ic = np.mean([r['rank_ic'] for r in all_results])
             
-            print(f"平均准确率: {avg_accuracy:.4f}")
-            print(f"平均AUC: {avg_auc:.4f}")
-            print(f"平均Sharpe: {avg_sharpe:.4f}")
-            print(f"平均最大回撤: {avg_max_dd:.4f}")
+            print(f"平均AUC:     {avg_auc:.3f}")
+            print(f"平均IC:      {avg_ic:.3f}")
+            print(f"平均Rank-IC: {avg_rank_ic:.3f}")
             
             self.performance_history = {
                 'avg_accuracy': avg_accuracy,
                 'avg_auc': avg_auc,
-                'avg_sharpe': avg_sharpe,
-                'avg_max_drawdown': avg_max_dd,
+                'avg_ic': avg_ic,
+                'avg_rank_ic': avg_rank_ic,
                 'folds': len(all_results)
             }
         
@@ -371,9 +428,9 @@ def main():
         initial_train_window=300,
         roll_step=30,
         prediction_window=20,
-        purge_gap=5,
-        forward_days=5,
-        return_threshold=0.01
+        purge_gap=10,
+        forward_days=20,
+        return_threshold=0.0
     )
     
     # 执行训练
