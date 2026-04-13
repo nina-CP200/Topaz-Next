@@ -80,10 +80,13 @@ class EnsembleModel:
             try:
                 saved = joblib.load(model_path)
                 self.models = saved['models']
-                self.meta_learner = saved['meta_learner']
+                self.meta_learner = saved.get('meta_learner', None)
                 self.feature_cols = saved['feature_cols']
                 
-                if os.path.exists(scaler_path):
+                # 检查是否包含标准化器（新格式）
+                if 'scaler' in saved:
+                    self.scaler = saved['scaler']
+                elif os.path.exists(scaler_path):
                     self.scaler = joblib.load(scaler_path)
                 
                 if os.path.exists(status_path):

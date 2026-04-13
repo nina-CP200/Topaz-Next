@@ -53,12 +53,74 @@ def save_portfolio(portfolio: Dict, portfolio_file: str):
         json.dump(portfolio, f, indent=2, ensure_ascii=False)
 
 
-def analyze_stocks(stock_list_file: str) -> List[Dict]:
-    """分析股票列表"""
+def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfolio: Dict = None) -> Dict:
+    """分析股票列表，返回包含所有结果和关注列表结果的字典"""
+    
+    # 初始化模型
     ensemble = EnsembleModel(model_dir='.')
+    
+    # 如果使用沪深300模型，加载专门的模型
+    if use_csi300_model:
+        import joblib
+        # 优先使用2年数据模型
+        if os.path.exists('ensemble_model_csi300_2y.pkl'):
+            model_data = joblib.load('ensemble_model_csi300_2y.pkl')
+            print("📦 已加载沪深300专用模型（2年数据）")
+        elif os.path.exists('ensemble_model_csi300.pkl'):
+            model_data = joblib.load('ensemble_model_csi300.pkl')
+            print("📦 已加载沪深300专用模型")
+        else:
+            print("⚠️ 未找到沪深300专用模型，使用默认模型")
+            return {'all_results': [], 'watchlist_results': []}
+        
+        ensemble.models = model_data['models']
+        ensemble.feature_cols = model_data['feature_cols']
+        ensemble.scaler = model_data['scaler']  # 加载标准化器
+        ensemble.model_status = {'trained': True, 'n_models': len(ensemble.models), 'models': list(ensemble.models.keys())}
+    
     fe = FeatureEngineer()
     
     stocks = parse_stock_list(stock_list_file)
+    
+    # 加载关注列表
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    watchlist_file = os.path.join(base_dir, 'A股关注股票列表.md')
+    watchlist_symbols = set()
+    if os.path.exists(watchlist_file):
+        try:
+            watchlist_stocks = parse_stock_list(watchlist_file)
+            watchlist_symbols = set([s for s, n, c in watchlist_stocks])
+            print(f"📋 加载关注列表: {len(watchlist_symbols)} 只股票")
+        except Exception as e:
+            print(f"⚠️ 加载关注列表失败: {e}")
+    
+    # 选择要分析的股票：持仓 + 关注 + 随机100只
+    import random
+    from datetime import datetime
+    # 使用当前日期作为随机种子，确保每天不同但同一天可重复
+    today = datetime.now().strftime('%Y%m%d')
+    random.seed(int(today))
+    
+    # 获取持仓股票代码
+    holdings = portfolio.get('holdings', {}) if portfolio else {}
+    holding_symbols = set(holdings.keys())
+    
+    # 持仓股票
+    holding_stocks = [(s, n, c) for s, n, c in stocks if s in holding_symbols]
+    
+    # 关注列表股票（不包括持仓）
+    watch_stocks = [(s, n, c) for s, n, c in stocks if s in watchlist_symbols and s not in holding_symbols]
+    
+    # 随机选择100只（不包括持仓和关注）
+    available_stocks = [(s, n, c) for s, n, c in stocks if s not in holding_symbols and s not in watchlist_symbols]
+    n_random = min(100, len(available_stocks))
+    random_stocks = random.sample(available_stocks, n_random) if available_stocks else []
+    
+    # 合并股票列表（持仓优先，然后关注，然后随机）
+    selected_stocks = holding_stocks + watch_stocks + random_stocks
+    
+    print(f"📋 分析股票: {len(holding_stocks)} 持仓 + {len(watch_stocks)} 关注 + {len(random_stocks)} 随机 = {len(selected_stocks)} 只")
+    
     results = []
     
     # 获取沪深300指数历史数据（用于生成指数因子）
@@ -69,7 +131,7 @@ def analyze_stocks(stock_list_file: str) -> List[Dict]:
     else:
         print(f"  ✓ 获取 {len(index_history)} 天指数数据")
     
-    for symbol, name, category in stocks[:25]:  # 限制 25 只
+    for symbol, name, category in selected_stocks:
         try:
             # 获取数据
             history = get_history_data(symbol, 'A股', days=60)
@@ -138,10 +200,16 @@ def analyze_stocks(stock_list_file: str) -> List[Dict]:
             print(f"分析 {symbol} 失败：{e}")
             continue
     
-    return results
+    # 提取关注列表的分析结果
+    watchlist_analysis = [r for r in results if r['symbol'] in watchlist_symbols]
+    
+    return {
+        'all_results': results,
+        'watchlist_results': watchlist_analysis
+    }
 
 
-def generate_decision(results: List[Dict], portfolio: Dict) -> Dict:
+def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: List[Dict] = None) -> Dict:
     """生成投资决策（结合大盘环境）"""
     
     # ========== 大盘环境判断 ==========
@@ -199,6 +267,7 @@ def generate_decision(results: List[Dict], portfolio: Dict) -> Dict:
         'buy': [],
         'sell': [],
         'hold': [],
+        'watchlist': watchlist_results if watchlist_results else [],  # 关注列表分析结果
         'market_info': {
             'environment': market_env,
             'index_price': index_data.get('price', 0) if index_data else 0,
@@ -548,6 +617,27 @@ def print_report(decisions: Dict, portfolio: Dict):
         print(f"  上涨比例: {mi['advance_ratio']:.1%}")
         print(f"  环境判断: {mi['environment']} - {mi['description']}")
     
+    # 关注列表分析
+    if decisions.get('watchlist'):
+        print("\n📋 关注股票分析")
+        print("-" * 80)
+        # 按概率排序
+        watchlist_sorted = sorted(decisions['watchlist'], key=lambda x: x['probability'], reverse=True)
+        for stock in watchlist_sorted[:10]:  # 只显示前10只
+            prob = stock['probability']
+            prob_str = f"{prob:.1%}"
+            if prob >= 0.60:
+                emoji = "🟢"  # 建议买入
+            elif prob >= 0.50:
+                emoji = "🟡"  # 建议持有
+            elif prob >= 0.40:
+                emoji = "🟠"  # 建议观望
+            else:
+                emoji = "🔴"  # 建议回避
+            print(f"  {emoji} {stock['symbol']} {stock['name']}: {prob_str} - {stock['advice']}")
+        if len(watchlist_sorted) > 10:
+            print(f"  ... 还有 {len(watchlist_sorted) - 10} 只关注股票")
+    
     # 买入决策
     if decisions['buy']:
         print("\n✅ 建议买入")
@@ -599,31 +689,48 @@ def main():
                         help='预告模式：只生成决策建议，不执行交易')
     parser.add_argument('--execute', action='store_true', default=True,
                         help='执行模式：分析并执行交易（默认）')
+    parser.add_argument('--csi300', action='store_true',
+                        help='使用沪深300专用模型')
     args = parser.parse_args()
     
     # 判断运行模式
     is_preview_mode = args.preview
+    use_csi300 = args.csi300
     
     base_dir = os.path.dirname(os.path.abspath(__file__))
     portfolio_file = os.path.join(base_dir, 'virtual_portfolio.json')
-    stock_list_file = find_stock_list_file(base_dir, 'A股')
     
-    if not stock_list_file or not os.path.exists(stock_list_file):
-        print(f"❌ 未找到 A股列表文件")
-        return
+    # 如果使用沪深300模型，使用对应的股票列表
+    if use_csi300:
+        stock_list_file = os.path.join(base_dir, 'csi300_stock_list.md')
+        if not os.path.exists(stock_list_file):
+            print(f"❌ 未找到沪深300股票列表文件")
+            return
+    else:
+        stock_list_file = find_stock_list_file(base_dir, 'A股')
+        if not stock_list_file or not os.path.exists(stock_list_file):
+            print(f"❌ 未找到 A股列表文件")
+            return
     
     # 加载投资组合
     print("📂 加载投资组合...")
     portfolio = load_portfolio(portfolio_file)
     
     # 分析股票
-    print("📈 分析 A股...")
-    results = analyze_stocks(stock_list_file)
+    if use_csi300:
+        print("📈 分析沪深300成分股（使用专用模型）...")
+        analysis_data = analyze_stocks(stock_list_file, use_csi300_model=True, portfolio=portfolio)
+    else:
+        print("📈 分析 A股...")
+        analysis_data = analyze_stocks(stock_list_file, portfolio=portfolio)
+    
+    results = analysis_data['all_results']
+    watchlist_results = analysis_data['watchlist_results']
     print(f"  完成 {len(results)} 只股票分析")
     
     # 生成决策
     print("🤖 生成投资决策...")
-    decisions = generate_decision(results, portfolio)
+    decisions = generate_decision(results, portfolio, watchlist_results)
     
     # 根据模式处理
     if is_preview_mode:

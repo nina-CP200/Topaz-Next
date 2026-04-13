@@ -404,6 +404,77 @@ def get_tencent_history(symbol: str, days: int = 60) -> Optional[pd.DataFrame]:
         return None
 
 
+def get_qq_history(symbol: str, days: int = 500) -> Optional[pd.DataFrame]:
+    """
+    从腾讯财经获取A股历史数据（支持更长时间）
+    
+    Parameters
+    ----------
+    symbol : str
+        股票代码
+    days : int
+        获取天数（最大约500天，即2年）
+        
+    Returns
+    -------
+    pd.DataFrame
+        历史数据 DataFrame
+    """
+    import pandas as pd
+    
+    try:
+        # 转换代码格式
+        if symbol.endswith('.SH'):
+            code = 'sh' + symbol.replace('.SH', '')
+        elif symbol.endswith('.SZ'):
+            code = 'sz' + symbol.replace('.SZ', '')
+        else:
+            code = 'sh' + symbol if symbol.startswith('6') else 'sz' + symbol
+        
+        # 腾讯财经K线接口
+        url = f'http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={code},day,,,{days},qfq'
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://stock.finance.qq.com/'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        data = response.json()
+        
+        if data.get('data') and data['data'].get(code):
+            stock_data = data['data'][code]
+            
+            # 获取前复权数据
+            klines = stock_data.get('qfqday', stock_data.get('day', []))
+            
+            if klines:
+                records = []
+                for item in klines:
+                    # 格式: [日期, 开盘, 收盘, 最低, 最高, 成交量]
+                    if len(item) >= 6:
+                        records.append({
+                            'date': item[0],
+                            'open': float(item[1]),
+                            'close': float(item[2]),
+                            'low': float(item[3]),
+                            'high': float(item[4]),
+                            'volume': float(item[5])
+                        })
+                
+                df = pd.DataFrame(records)
+                df['datetime'] = pd.to_datetime(df['date'])
+                df.set_index('datetime', inplace=True)
+                df['symbol'] = symbol
+                df['code'] = symbol
+                
+                return df
+        return None
+    except Exception as e:
+        print(f"获取腾讯历史数据 {symbol} 失败：{e}")
+        return None
+
+
 def get_history_data(symbol: str, market: str = 'A 股', days: int = 60) -> Optional[pd.DataFrame]:
     """
     统一接口：获取历史数据
@@ -438,4 +509,10 @@ def get_history_data(symbol: str, market: str = 'A 股', days: int = 60) -> Opti
         # 回退到 Finnhub（免费 API 不支持历史数据）
         return get_finnhub_history(symbol, days)
     else:
+        # A股：如果需要更多天数，使用腾讯接口
+        if days > 100:
+            data = get_qq_history(symbol, days)
+            if data is not None:
+                return data
+        # 否则使用新浪接口
         return get_tencent_history(symbol, days)

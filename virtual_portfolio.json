@@ -1,11 +1,18 @@
 {
   "initial_capital": 1000000,
-  "cash": 970955.0,
-  "holdings": {},
-  "holdings_value": 0,
-  "total_value": 970955.0,
-  "pnl": -29045.0,
-  "pnl_pct": -2.9,
+  "cash": 875339.0,
+  "holdings": {
+    "300059.SZ": {
+      "name": "东方财富",
+      "shares": 4800,
+      "cost": 19.92,
+      "current_price": 19.99
+    }
+  },
+  "holdings_value": 95952.0,
+  "total_value": 971291.0,
+  "pnl": -28709.0,
+  "pnl_pct": -2.87,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
@@ -611,9 +618,32 @@
       "price": 17.17,
       "amount": 85850.00000000001,
       "reason": "ML建议回避(概率5.3%)"
+    },
+    {
+      "date": "2026-04-13",
+      "time": "10:00",
+      "type": "buy",
+      "code": "300059.SZ",
+      "name": "东方财富",
+      "shares": 4800,
+      "price": 19.92,
+      "amount": 95616.00000000001,
+      "reason": "评分0.75(概率61.2%, 预测收益2.2%), 仓位10%"
     }
   ],
   "daily_values": [
+    {
+      "date": "2026-04-13",
+      "time": "09:45",
+      "cash": 970955.0,
+      "holdings_value": 0,
+      "total_value": 970955.0,
+      "pnl": -29045.0,
+      "pnl_pct": -2.9,
+      "benchmark_value": 0,
+      "benchmark_pct": 0,
+      "note": "ML模型无买入信号，维持空仓观望"
+    },
     {
       "date": "2026-04-10",
       "time": "09:45",
@@ -885,6 +915,24 @@
       "total_value": 970955.0,
       "pnl": -29045.0,
       "pnl_pct": -2.9
+    },
+    {
+      "date": "2026-04-13",
+      "time": "10:00",
+      "cash": 875339.0,
+      "holdings_value": 95616.0,
+      "total_value": 970955.0,
+      "pnl": -29045.0,
+      "pnl_pct": -2.9
+    },
+    {
+      "date": "2026-04-13",
+      "time": "14:30",
+      "cash": 875339.0,
+      "holdings_value": 95952.0,
+      "total_value": 971291.0,
+      "pnl": -28709.0,
+      "pnl_pct": -2.87
     }
   ]
 }
