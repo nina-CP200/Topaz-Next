@@ -14,6 +14,7 @@ import os
 import sys
 import json
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from typing import Dict, List, Optional
 import argparse
@@ -56,32 +57,90 @@ def save_portfolio(portfolio: Dict, portfolio_file: str):
 def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfolio: Dict = None) -> Dict:
     """分析股票列表，返回包含所有结果和关注列表结果的字典"""
     
-    # 初始化模型
-    ensemble = EnsembleModel(model_dir='.')
+    import joblib
     
-    # 如果使用沪深300模型，加载专门的模型
+    # ========== 市场环境判断（放宽定义）==========
+    from market_data import get_index_history, get_market_sentiment
+    
+    index_history = get_index_history('000300.SH', days=30)
+    sentiment = get_market_sentiment()
+    
+    adv_ratio = 0.5
+    if sentiment:
+        adv_ratio = sentiment.get('advance_ratio', 0.5)
+    
+    # 计算20日收益
+    ret_20d = 0
+    if index_history is not None and len(index_history) >= 20:
+        ret_20d = index_history['close'].iloc[-1] / index_history['close'].iloc[-20] - 1
+    
+    # 环境分类（放宽）
+    if adv_ratio > 0.55 and ret_20d > 0:
+        detailed_regime = 'bull'
+        model_confidence = 0.7  # IC=0.10
+    elif adv_ratio > 0.55 and ret_20d < -0.02:
+        detailed_regime = 'recovery'
+        model_confidence = 0.9  # IC=0.15（最佳）
+    elif adv_ratio < 0.45 and ret_20d < -0.02:
+        detailed_regime = 'bear'
+        model_confidence = 0.6  # IC=0.06（改善）
+    elif adv_ratio < 0.45 and ret_20d > 0.02:
+        detailed_regime = 'pullback'
+        model_confidence = 0.8  # IC=0.11
+    else:
+        detailed_regime = 'sideways'
+        model_confidence = 0.5  # IC=0.03
+    
+    print(f"\n📊 市场环境: {detailed_regime}")
+    print(f"   上涨比例: {adv_ratio:.1%}, 20日收益: {ret_20d*100:.1f}%")
+    print(f"   模型置信度: {model_confidence:.0%}")
+    
+    # 环境效果说明 + 动态仓位建议（豆包风控改进）
+    regime_effect = {
+        'recovery': '✅ 最佳环境（IC=0.15）- 建议95%仓位',
+        'pullback': '✅ 有效环境（IC=0.11）- 建议80%仓位',
+        'bull': '✅ 有效环境（IC=0.10）- 建议70%仓位',
+        'bear': '⚠️ 中等环境（IC=0.06）- 建议30%仓位',
+        'sideways': '⚠️ 较弱环境（IC=0.03）- 建议40%仓位'
+    }
+    
+    position_advice = {
+        'recovery': 0.95,
+        'pullback': 0.80,
+        'bull': 0.70,
+        'bear': 0.30,
+        'sideways': 0.40
+    }
+    
+    recommended_position = position_advice.get(detailed_regime, 0.50)
+    
+    print(f"   {regime_effect.get(detailed_regime, '未知')}")
+    print(f"   📌 建议最大仓位: {recommended_position:.0%}")
+    
+    # ========== 加载分组模型 ==========
+    ensemble = None
+    
     if use_csi300_model:
-        import joblib
-        model_path = None
-        if os.path.exists('ensemble_model_csi300_latest.pkl'):
-            model_path = 'ensemble_model_csi300_latest.pkl'
-            print("📦 已加载沪深300 Walk-Forward 模型")
-        elif os.path.exists('ensemble_model_csi300_2y.pkl'):
-            model_path = 'ensemble_model_csi300_2y.pkl'
-            print("📦 已加载沪深300专用模型（2年数据）")
-        elif os.path.exists('ensemble_model_csi300.pkl'):
-            model_path = 'ensemble_model_csi300.pkl'
-            print("📦 已加载沪深300专用模型")
+        if os.path.exists('ensemble_model_regime_based.pkl'):
+            model_data = joblib.load('ensemble_model_regime_based.pkl')
+            models_by_regime = model_data.get('models_by_regime', {})
+            
+            if detailed_regime in models_by_regime:
+                selected = models_by_regime[detailed_regime]
+                print(f"📦 已加载 {detailed_regime} 环境模型")
+            else:
+                selected = models_by_regime.get('sideways', models_by_regime.get('bull', {}))
+                print(f"📦 已加载兜底模型")
+            
+            if selected:
+                ensemble = {
+                    'model': selected['model'],
+                    'scaler': selected['scaler'],
+                    'feature_cols': selected['features']
+                }
         else:
-            print("⚠️ 未找到沪深300专用模型，使用默认模型")
+            print("⚠️ 未找到分组模型")
             return {'all_results': [], 'watchlist_results': []}
-        
-        model_data = joblib.load(model_path)
-        
-        ensemble.models = model_data['models']
-        ensemble.feature_cols = model_data['feature_cols']
-        ensemble.scaler = model_data['scaler']  # 加载标准化器
-        ensemble.model_status = {'trained': True, 'n_models': len(ensemble.models), 'models': list(ensemble.models.keys())}
     
     fe = FeatureEngineer()
     
@@ -148,12 +207,21 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
             df_features = df_features.fillna(0)
             
             # 预测
-            feature_cols = ensemble.feature_cols
+            feature_cols = ensemble['feature_cols']
+            
+            # 检查特征完整性
+            missing = [f for f in feature_cols if f not in df_features.columns]
+            if missing:
+                for f in missing:
+                    df_features[f] = 0
+            
             latest = df_features.iloc[-1:][feature_cols]
             X = latest.values
+            X = np.clip(X, -1e10, 1e10)
             
-            pred = ensemble.predict(X)
-            proba = pred['probability'][0]
+            # 使用分组模型预测
+            X_scaled = ensemble['scaler'].transform(X)
+            proba = ensemble['model'].predict_proba(X_scaled)[:, 1][0]
             
             # 计算预期收益
             expected_return = (proba - 0.5) * 20  # 转换为百分比
@@ -168,7 +236,7 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
             else:
                 risk_level = '极高风险'
             
-            # 投资建议（调整阈值匹配新模型）
+            # 投资建议
             if proba >= 0.60:
                 advice = '建议买入'
             elif proba >= 0.50:
@@ -177,6 +245,17 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
                 advice = '建议观望'
             else:
                 advice = '建议回避'
+            
+            # 根据模型置信度调整建议
+            if model_confidence < 0.3:
+                # 低置信度环境，降低建议强度
+                if advice == '建议买入':
+                    advice = '谨慎买入'
+                elif advice == '建议持有':
+                    advice = '建议观望'
+            elif model_confidence >= 0.8:
+                # 高置信度环境，建议更可信
+                advice = advice.replace('建议', '强烈')
             
             results.append({
                 'symbol': symbol,
@@ -189,7 +268,8 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
                 'probability': proba,
                 'predicted_return': expected_return,
                 'risk_level': risk_level,
-                'advice': advice
+                'advice': advice,
+                'model_confidence': model_confidence
             })
             
         except Exception as e:
@@ -201,7 +281,11 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
     
     return {
         'all_results': results,
-        'watchlist_results': watchlist_analysis
+        'watchlist_results': watchlist_analysis,
+        'market_regime': detailed_regime,
+        'model_confidence': model_confidence,
+        'advance_ratio': adv_ratio,
+        'recommended_position': recommended_position
     }
 
 
@@ -604,6 +688,29 @@ def print_report(decisions: Dict, portfolio: Dict):
     print("📊 Topaz 每日投资决策报告")
     print("=" * 80)
     print(f"报告时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    
+    # 市场环境信息
+    regime = decisions.get('market_regime', 'sideways')
+    confidence = decisions.get('model_confidence', 0.5)
+    adv_ratio = decisions.get('advance_ratio', 0.5)
+    
+    print(f"\n📈 市场环境")
+    print(f"  环境: {regime} | 模型置信度: {confidence:.0%} | 上涨比例: {adv_ratio:.1%}")
+    
+    # 环境效果说明
+    regime_effect = {
+        'recovery': '✅ 最佳环境（IC=0.15, Spread=4.85%）',
+        'pullback': '✅ 有效环境（IC=0.11, Spread=3.69%）',
+        'bull': '✅ 有效环境（IC=0.10, Spread=4.61%）',
+        'bear': '⚠️ 中等环境（IC=0.06, Spread=1.96%）',
+        'sideways': '⚠️ 较弱环境（IC=0.03, Spread=1.15%）'
+    }
+    effect_note = regime_effect.get(regime, '未知')
+    print(f"  {effect_note}")
+    
+    # 动态仓位建议（风控改进）
+    recommended_position = decisions.get('recommended_position', 0.50)
+    print(f"  📌 建议最大仓位: {recommended_position:.0%}")
     
     all_results = decisions.get('all_results', [])
     if all_results:

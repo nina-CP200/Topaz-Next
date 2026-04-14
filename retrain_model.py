@@ -112,26 +112,38 @@ def prepare_features(df: pd.DataFrame, fe: FeatureEngineer) -> Tuple[pd.DataFram
     # 填充缺失值
     df = df.fillna(0)
     
-    # 定义特征列
+    # 定义特征列（原有45个 + 新增时间序列动量因子）
     feature_cols = [
         # 均线
         'ma5', 'ma10', 'ma20', 'ma60',
         'ma5_slope', 'ma10_slope', 'ma20_slope',
         'price_to_ma5', 'price_to_ma10', 'price_to_ma20',
-        # 波动率
-        'volatility_5', 'volatility_10', 'volatility_20',
+        # 波动率（含 EWMA）
+        'volatility_5', 'volatility_10', 'volatility_20', 'volatility_60',
+        'vol_ewma', 'vol_regime', 'position_size',
         # 成交量
         'volume_ma5', 'volume_ratio',
         # 收益率
         'return_1d', 'return_5d', 'return_10d', 'return_20d',
+        # 时间序列动量（新增）
+        'tsmom_lb25', 'tsmom_lb60', 'tsmom_lb120',
+        'ma_cross_5_20', 'ma_cross_10_50', 'trend_strength',
+        'momentum_accel_5', 'momentum_accel_10',
         # 技术指标
         'rsi', 'macd', 'macd_signal', 'macd_hist',
         'bb_position', 'kdj_k', 'kdj_d',
+        # 均值回归（新增多周期）
+        'mean_reversion_20', 'mean_reversion_60',
+        'price_percentile_20', 'price_percentile_60',
+        # 尾部风险（新增）
+        'skewness_20', 'kurtosis_20', 'tail_risk', 'vol_spike',
         # 指数因子
         'index_close', 'index_return_1d', 'index_return_5d', 'index_return_20d',
         'index_ma_position', 'index_volatility',
         'relative_strength_1d', 'relative_strength_5d', 'relative_strength_20d',
-        'beta'
+        'beta',
+        # 危机 Alpha（新增）
+        'max_drawdown_20', 'dd_recovery', 'sharpe_proxy'
     ]
     
     # 检查特征是否存在

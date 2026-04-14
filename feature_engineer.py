@@ -87,11 +87,15 @@ class FeatureEngineer:
         return df
     
     def _momentum_factors(self, df: pd.DataFrame) -> pd.DataFrame:
-        """动量因子"""
+        """动量因子（含多周期时间序列动量）"""
         
-        # 收益率
+        # 基础收益率
         for period in [1, 3, 5, 10, 20, 60]:
             df[f'return_{period}d'] = df['close'].pct_change(period)
+        
+        # 时间序列动量 - 多回看期（笔记实证最佳：25/60/120天）
+        for lb in [25, 60, 120]:
+            df[f'tsmom_lb{lb}'] = df['close'].pct_change(lb)
         
         # 价格动量（价格变化率）
         for period in [5, 10, 20]:
@@ -101,20 +105,52 @@ class FeatureEngineer:
         for period in [10, 20]:
             df[f'roc_{period}'] = (df['close'] - df['close'].shift(period)) / df['close'].shift(period) * 100
         
-        # 动量加速度
-        df['momentum_accel'] = df['return_5d'] - df['return_5d'].shift(5)
+        # 动量加速度（趋势加速/减速）
+        for period in [5, 10, 20]:
+            mom_col = f'return_{period}d'
+            if mom_col in df.columns:
+                df[f'momentum_accel_{period}'] = df[mom_col] - df[mom_col].shift(period)
+        
+        # 移动平均交叉信号（金叉/死叉）
+        ma_pairs = [(5, 20), (10, 50), (20, 60)]
+        for short, long in ma_pairs:
+            short_ma = f'ma{short}'
+            long_ma = f'ma{long}'
+            if short_ma in df.columns and long_ma in df.columns:
+                df[f'ma_cross_{short}_{long}'] = df[short_ma] / df[long_ma] - 1
+        
+        # 趋势强度
+        if 'ma5' in df.columns and 'ma20' in df.columns:
+            df['trend_strength'] = abs(df['ma5'] - df['ma20']) / df['ma20'] * 100
         
         return df
     
     def _volatility_factors(self, df: pd.DataFrame) -> pd.DataFrame:
-        """波动率因子"""
+        """波动率因子（含 EWMA 和头寸调整）"""
         
         # 历史波动率
         for period in [5, 10, 20, 60]:
             df[f'volatility_{period}'] = df['return_1d'].rolling(period).std() * np.sqrt(252)
         
+        # EWMA 波动率（AQR 方法，权重中心60天）
+        delta = 60 / 61  # ≈ 0.9836
+        returns = df['return_1d'].fillna(0)
+        var_ewma = returns.ewm(alpha=1-delta).var()
+        df['vol_ewma'] = np.sqrt(var_ewma * 252)  # 年化
+        
+        # 波动率调整头寸规模因子
+        target_vol = 0.15  # 目标波动率 15%
+        df['position_size'] = target_vol / (df['vol_ewma'] + 0.01)
+        df['position_size'] = df['position_size'].clip(0.5, 2.0)  # 限制范围
+        
+        # 波动率 regime
+        vol_20 = df.get('volatility_20', df['return_1d'].rolling(20).std() * np.sqrt(252))
+        vol_mean = vol_20.rolling(120).mean()
+        df['vol_regime'] = (vol_20 - vol_mean) / (vol_20.rolling(120).std() + 0.01)
+        
         # 波动率变化
-        df['volatility_change'] = df['volatility_5'] / df['volatility_20'] - 1
+        if 'volatility_5' in df.columns and 'volatility_20' in df.columns:
+            df['volatility_change'] = df['volatility_5'] / df['volatility_20'] - 1
         
         # ATR (Average True Range)
         df['tr'] = np.maximum(
@@ -127,8 +163,9 @@ class FeatureEngineer:
         df['atr_14'] = df['tr'].rolling(14).mean()
         df['atr_ratio'] = df['atr_14'] / df['close']
         
-        # 偏度（收益分布不对称性）
+        # 偏度（收益分布不对称性）- 尾部风险指标
         df['skewness_20'] = df['return_1d'].rolling(20).skew()
+        df['skewness_60'] = df['return_1d'].rolling(60).skew()
         
         # 峰度（尾部风险）
         df['kurtosis_20'] = df['return_1d'].rolling(20).kurt()
@@ -138,6 +175,11 @@ class FeatureEngineer:
         down_returns = df['return_1d'].where(df['return_1d'] < 0, 0)
         df['up_volatility_20'] = up_returns.rolling(20).std() * np.sqrt(252)
         df['down_volatility_20'] = down_returns.rolling(20).std() * np.sqrt(252)
+        
+        # 波动率爆发信号（危机 Alpha）
+        if 'volatility_20' in df.columns and 'volatility_60' in df.columns:
+            vol_spike = df['volatility_20'] / df['volatility_60']
+            df['vol_spike'] = (vol_spike > 1.5).astype(int)
         
         return df
     
@@ -269,15 +311,19 @@ class FeatureEngineer:
         return df
     
     def _statistical_factors(self, df: pd.DataFrame) -> pd.DataFrame:
-        """统计因子"""
+        """统计因子（含均值回归和危机 Alpha）"""
         
-        # 均值回归
-        df['mean_reversion_20'] = (df['close'] - df['close'].rolling(20).mean()) / df['close'].rolling(20).std()
+        # 均值回归 - 多周期布林带 Z-Score
+        for window in [20, 60]:
+            ma = df['close'].rolling(window).mean()
+            std = df['close'].rolling(window).std()
+            df[f'mean_reversion_{window}'] = (df['close'] - ma) / (std + 0.01)
         
-        # 价格分位数
-        df['price_percentile_20'] = df['close'].rolling(20).rank(pct=True)
+        # 价格分位数（回归信号）
+        for window in [20, 60]:
+            df[f'price_percentile_{window}'] = df['close'].rolling(window).rank(pct=True)
         
-        # 收益自相关
+        # 收益自相关（动量/反转信号）
         df['return_autocorr_5'] = df['return_1d'].rolling(20).apply(
             lambda x: x.autocorr(lag=5) if len(x) > 5 else 0, raw=False
         )
@@ -286,9 +332,30 @@ class FeatureEngineer:
         cummax = df['close'].cummax()
         drawdown = (cummax - df['close']) / cummax
         df['max_drawdown_20'] = drawdown.rolling(20).max()
+        df['max_drawdown_60'] = drawdown.rolling(60).max()
+        
+        # 回撤恢复信号
+        if 'max_drawdown_20' in df.columns:
+            dd = df['max_drawdown_20']
+            df['dd_recovery'] = (dd < dd.shift(5)).astype(int)
         
         # 信息比率相关
-        df['sharpe_proxy'] = df['return_1d'].rolling(20).mean() / (df['return_1d'].rolling(20).std() + 1e-8)
+        df['sharpe_proxy'] = df['return_1d'].rolling(20).mean() / (df['return_1d'].rolling(20).std() + 0.01)
+        df['sharpe_60'] = df['return_1d'].rolling(60).mean() / (df['return_1d'].rolling(60).std() + 0.01)
+        
+        # 尾部风险综合指标
+        if 'skewness_20' in df.columns and 'kurtosis_20' in df.columns:
+            df['tail_risk'] = abs(df['skewness_20']) + abs(df['kurtosis_20']) / 10
+        
+        # 危机 Alpha 相关因子
+        # 市场压力检测（如果市场数据存在）
+        if 'market_return' in df.columns:
+            market_vol = df['market_return'].rolling(60).std()
+            df['market_stress'] = (df['market_return'] < -2 * market_vol).astype(int)
+            
+            # 长周期动量在危机中的表现代理
+            if 'tsmom_lb120' in df.columns:
+                df['crisis_momentum'] = df['tsmom_lb120'] * df['market_stress']
         
         return df
     

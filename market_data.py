@@ -443,6 +443,67 @@ def judge_market_environment(index_data: Dict = None, sentiment: Dict = None) ->
         return 'sideways'
 
 
+def judge_market_regime(advance_ratio: float = None, days: int = 5) -> Dict:
+    """
+    判断细致的市场环境（用于ML模型置信度）
+    
+    Args:
+        advance_ratio: 当日上涨比例
+        days: 回看天数
+    
+    Returns:
+        {
+            'regime': 'bull/bear/weak_bull/weak_bear/sideways',
+            'confidence': 0-1（与训练环境匹配度）
+            'adv_ratio_5d_ma': 5日上涨比例均值
+        }
+    """
+    try:
+        if advance_ratio is None:
+            sentiment = get_market_sentiment()
+            advance_ratio = sentiment.get('advance_ratio', 0.5) if sentiment else 0.5
+        
+        # 获取历史上涨比例
+        index_history = get_index_history(days=max(days, 20))
+        if index_history is None or len(index_history) < days:
+            return {'regime': 'sideways', 'confidence': 0.3, 'adv_ratio_5d_ma': advance_ratio}
+        
+        # 估算历史上涨比例（用涨跌家数近似）
+        # 简化：用指数涨跌判断
+        changes = index_history['close'].pct_change()
+        adv_approx = (changes > 0).rolling(days).mean().iloc[-1] if len(changes) >= days else 0.5
+        
+        # 使用当前上涨比例
+        adv_ratio_5d_ma = (advance_ratio + adv_approx * 4) / 5 if adv_approx else advance_ratio
+        
+        # 分类（与训练时一致）
+        if advance_ratio > 0.6 and adv_ratio_5d_ma > 0.55:
+            regime = 'bull'
+            confidence = 0.5  # 训练期主要是weak_bear，bull环境置信度低
+        elif advance_ratio < 0.4 and adv_ratio_5d_ma < 0.45:
+            regime = 'bear'
+            confidence = 0.7  # 与训练期接近
+        elif advance_ratio > 0.55:
+            regime = 'weak_bull'
+            confidence = 0.3  # 训练期较少，置信度低
+        elif advance_ratio < 0.45:
+            regime = 'weak_bear'
+            confidence = 0.9  # 训练期主要环境，置信度高
+        else:
+            regime = 'sideways'
+            confidence = 0.5
+        
+        return {
+            'regime': regime,
+            'confidence': confidence,
+            'adv_ratio_5d_ma': adv_ratio_5d_ma,
+            'advance_ratio': advance_ratio
+        }
+        
+    except Exception as e:
+        return {'regime': 'sideways', 'confidence': 0.3, 'adv_ratio_5d_ma': 0.5}
+
+
 def get_market_adjusted_thresholds(market_env: str) -> Dict:
     """
     根据市场环境返回调整后的交易阈值
