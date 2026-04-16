@@ -3,9 +3,10 @@
 # 每个交易日 14:30 运行，执行交易决策
 # 执行后发送报告到 Slack DM（显示为佩丽卡）
 
-cd /home/emmmoji/.openclaw/workspace-topaz/topaz-v3
+SCRIPT_DIR=$(dirname "$0")
+cd "$SCRIPT_DIR"
 
-LOG_FILE=/home/emmmoji/.openclaw/workspace-topaz/topaz_report.log
+LOG_FILE="$SCRIPT_DIR/../topaz_report.log"
 OUTPUT_FILE=/tmp/trade_execute_output.txt
 
 echo "" >> $LOG_FILE

@@ -15,7 +15,7 @@ Qlib 风格的量化预测模型：
 ## 运行方式
 
 ```bash
-cd /home/emmmoji/.openclaw/workspace-topaz/topaz-v3
+cd $(dirname "$0")  # 使用相对路径
 python3 topaz_analysis_v3_full.py
 ```
 

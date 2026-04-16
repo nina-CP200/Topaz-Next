@@ -95,21 +95,21 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
     print(f"   上涨比例: {adv_ratio:.1%}, 20日收益: {ret_20d*100:.1f}%")
     print(f"   模型置信度: {model_confidence:.0%}")
     
-    # 环境效果说明 + 动态仓位建议（豆包风控改进）
+    # 环境效果说明 + 动态仓位建议（震荡分散、熊市保守策略）
     regime_effect = {
         'recovery': '✅ 最佳环境（IC=0.15）- 建议95%仓位',
         'pullback': '✅ 有效环境（IC=0.11）- 建议80%仓位',
         'bull': '✅ 有效环境（IC=0.10）- 建议70%仓位',
-        'bear': '⚠️ 中等环境（IC=0.06）- 建议30%仓位',
-        'sideways': '⚠️ 较弱环境（IC=0.03）- 建议40%仓位'
+        'bear': '⚠️ 熊市保守（IC=0.06）- 建议20%仓位，严格止损',
+        'sideways': '📊 震荡分散（IC=0.03）- 建议50%仓位，diversify多股'
     }
     
     position_advice = {
         'recovery': 0.95,
         'pullback': 0.80,
         'bull': 0.70,
-        'bear': 0.30,
-        'sideways': 0.40
+        'bear': 0.20,   # 熊市降低到20%
+        'sideways': 0.50  # 震荡市提高到50%，但单股上限降低
     }
     
     recommended_position = position_advice.get(detailed_regime, 0.50)
@@ -140,6 +140,20 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False, portfol
                 }
         else:
             print("⚠️ 未找到分组模型")
+            return {'all_results': [], 'watchlist_results': []}
+    else:
+        # 非CSI300模式：加载默认 ensemble_model_csi300_latest.pkl
+        if os.path.exists('ensemble_model_csi300_latest.pkl'):
+            model_data = joblib.load('ensemble_model_csi300_latest.pkl')
+            # 使用 lightgbm 子模型
+            ensemble = {
+                'model': model_data['models']['lightgbm'],
+                'scaler': model_data['scaler'],
+                'feature_cols': model_data['feature_cols']
+            }
+            print(f"📦 已加载默认 ensemble_model_csi300_latest.pkl")
+        else:
+            print("⚠️ 未找到默认模型 ensemble_model_csi300_latest.pkl")
             return {'all_results': [], 'watchlist_results': []}
     
     fe = FeatureEngineer()
@@ -325,15 +339,18 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
     for r in results:
         r['score'] = calc_score(r)
     
-    # 筛选建议买入的股票（根据大盘环境调整）
+    # 筛选建议买入的股票（根据大盘环境调整 - 震荡分散、熊市保守）
     if market_env == 'bull':
         # 牛市：买入建议买入和持有的股票
         buy_candidates = [r for r in results if r['advice'] in ['建议买入', '建议持有']]
     elif market_env == 'bear':
-        # 熊市：只买入强烈推荐的股票
-        buy_candidates = [r for r in results if r['advice'] == '建议买入' and r['probability'] > 0.8]
+        # 熊市保守策略：只买入最强的股票（强烈建议买入 + 概率>0.85）
+        buy_candidates = [r for r in results if r['advice'] in ['强烈建议买入', '建议买入'] and r['probability'] > 0.85]
+    elif market_env == 'sideways':
+        # 震荡分散策略：放宽门槛，捕捉更多机会（建议买入 + 建议/谨慎持有，概率>55%）
+        buy_candidates = [r for r in results if r['probability'] > 0.55 and r['advice'] in ['建议买入', '强烈建议买入', '建议持有', '谨慎买入']]
     else:
-        # 震荡/反弹：买入建议买入的股票
+        # 反弹/复苏：买入建议买入的股票
         buy_candidates = [r for r in results if r['advice'] == '建议买入']
     
     buy_candidates.sort(key=lambda x: x['score'], reverse=True)
@@ -359,9 +376,19 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
     
     # ========== 卖出决策 ==========
     
-    # 参数（根据大盘环境调整）
-    STOP_LOSS_PCT = -0.08 if market_env != 'bear' else -0.05  # 熊市止损更严格
-    TAKE_PROFIT_PCT = 0.15 if market_env == 'bull' else 0.12  # 牛市止盈更高
+    # 参数（根据大盘环境调整 - 震荡分散、熊市保守）
+    if market_env == 'bear':
+        # 熊市保守：严格止损，不贪婪止盈
+        STOP_LOSS_PCT = -0.04   # 熊市止损更严格 4%
+        TAKE_PROFIT_PCT = 0.08  # 熊市止盈更保守 8%
+    elif market_env == 'sideways':
+        # 震荡分散：适度止损，快速止盈（震荡市机会多，有利润就走）
+        STOP_LOSS_PCT = -0.06   # 震荡市止损 6%
+        TAKE_PROFIT_PCT = 0.08  # 震荡市止盈 8%（快速兑现）
+    else:
+        STOP_LOSS_PCT = -0.08   # 其他环境止损 8%
+        TAKE_PROFIT_PCT = 0.15 if market_env == 'bull' else 0.12  # 牛市止盈更高
+    
     AVOID_THRESHOLD = SELL_THRESHOLD
     SWAP_PROFIT_THRESHOLD = 0.05
     SWAP_SCORE_THRESHOLD = 0.65
@@ -434,7 +461,7 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
     sell_amount = sum(s['amount'] for s in decisions['sell'])
     available_cash = cash + sell_amount
     
-    # 建议2：动态仓位分配（结合大盘环境）
+    # 建议2：动态仓位分配（震荡分散、熊市保守策略）
     def get_position_pct(stock, is_adding_position=False, pnl_pct=0):
         """根据评分和大盘环境动态分配仓位
         
@@ -448,8 +475,14 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
         if is_adding_position:
             # 加仓逻辑：抄底（亏损时加仓）
             if market_env == 'bear':
-                # 熊市不加仓
+                # 熊市禁止加仓
                 return 0
+            elif market_env == 'sideways':
+                # 震荡市谨慎加仓（只在深度亏损+高评分时）
+                if pnl_pct < -0.08 and score > 0.75:
+                    return min(0.06, SINGLE_MAX)  # 震荡市加仓保守 6%
+                else:
+                    return 0
             elif pnl_pct < -0.05 and score > 0.7:
                 return min(0.15, SINGLE_MAX)
             elif pnl_pct < 0 and score > 0.6:
@@ -469,15 +502,25 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
                 else:
                     return min(0.10, SINGLE_MAX)
             elif market_env == 'bear':
-                # 熊市：保守
-                if score > 0.85:
-                    return min(0.12, SINGLE_MAX)
-                elif score > 0.75:
-                    return min(0.08, SINGLE_MAX)
+                # 熊市保守：只买最强的，仓位很小
+                if score > 0.90:
+                    return min(0.10, SINGLE_MAX)  # 熊市最强股票 10%
+                elif score > 0.85:
+                    return min(0.06, SINGLE_MAX)  # 熊市次强 6%
                 else:
-                    return 0
+                    return 0  # 熊市不买其他股票
+            elif market_env == 'sideways':
+                # 震荡分散策略：单股仓位低，买更多股票
+                if score > 0.80:
+                    return min(0.10, SINGLE_MAX)  # 震荡市高分 10%
+                elif score > 0.70:
+                    return min(0.08, SINGLE_MAX)  # 震荡市中分 8%
+                elif score > 0.60:
+                    return min(0.06, SINGLE_MAX)  # 震荡市低分 6%
+                else:
+                    return min(0.04, SINGLE_MAX)  # 震荡市最低分 4%
             else:
-                # 震荡/反弹：中性
+                # 反弹/复苏：中性
                 if score > 0.85:
                     return min(0.20, SINGLE_MAX)
                 elif score > 0.75:
@@ -533,7 +576,10 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
             available_cash -= shares * current_price
     
     # 新建仓（非持仓股票）
-    for stock in buy_candidates[:5]:
+    # 震荡市买更多股票（最多10个），其他环境保持5个
+    max_new_positions = 10 if market_env == 'sideways' else 5
+    
+    for stock in buy_candidates[:max_new_positions]:
         # 跳过已在持仓中的股票（已在上面的抄底加仓处理）
         if stock['symbol'] in holdings:
             continue
@@ -543,7 +589,15 @@ def generate_decision(results: List[Dict], portfolio: Dict, watchlist_results: L
         
         position_pct = get_position_pct(stock)
         # 根据大盘环境调整最大金额
-        max_amount = 250000 if market_env == 'bull' else (150000 if market_env == 'bear' else 200000)
+        if market_env == 'bull':
+            max_amount = 250000
+        elif market_env == 'bear':
+            max_amount = 80000   # 熊市单股上限更低
+        elif market_env == 'sideways':
+            max_amount = 100000  # 震荡市单股上限低，但可以买更多
+        else:
+            max_amount = 200000
+        
         amount = min(available_cash * position_pct, max_amount)
         shares = int(amount / stock['current_price'] / 100) * 100
         
@@ -702,8 +756,8 @@ def print_report(decisions: Dict, portfolio: Dict):
         'recovery': '✅ 最佳环境（IC=0.15, Spread=4.85%）',
         'pullback': '✅ 有效环境（IC=0.11, Spread=3.69%）',
         'bull': '✅ 有效环境（IC=0.10, Spread=4.61%）',
-        'bear': '⚠️ 中等环境（IC=0.06, Spread=1.96%）',
-        'sideways': '⚠️ 较弱环境（IC=0.03, Spread=1.15%）'
+        'bear': '⚠️ 熊市保守（IC=0.06）- 20%仓位，严格止损4%，只买最强',
+        'sideways': '📊 震荡分散（IC=0.03）- 50%仓位，diversify多股，快速止盈'
     }
     effect_note = regime_effect.get(regime, '未知')
     print(f"  {effect_note}")
@@ -826,16 +880,11 @@ def main():
     portfolio_file = os.path.join(base_dir, 'virtual_portfolio.json')
     
     # 如果使用沪深300模型，使用对应的股票列表
-    if use_csi300:
-        stock_list_file = os.path.join(base_dir, 'csi300_stock_list.md')
-        if not os.path.exists(stock_list_file):
-            print(f"❌ 未找到沪深300股票列表文件")
-            return
-    else:
-        stock_list_file = find_stock_list_file(base_dir, 'A股')
-        if not stock_list_file or not os.path.exists(stock_list_file):
-            print(f"❌ 未找到 A股列表文件")
-            return
+    # 默认都使用沪深300全量列表进行分析
+    stock_list_file = os.path.join(base_dir, 'csi300_stock_list.md')
+    if not os.path.exists(stock_list_file):
+        print(f"❌ 未找到沪深300股票列表文件")
+        return
     
     # 加载投资组合
     print("📂 加载投资组合...")
@@ -843,10 +892,10 @@ def main():
     
     # 分析股票
     if use_csi300:
-        print("📈 分析沪深300成分股（使用专用模型）...")
+        print("📈 分析沪深300成分股（使用分组模型）...")
         analysis_data = analyze_stocks(stock_list_file, use_csi300_model=True, portfolio=portfolio)
     else:
-        print("📈 分析 A股...")
+        print("📈 分析沪深300成分股（使用默认模型）...")
         analysis_data = analyze_stocks(stock_list_file, portfolio=portfolio)
     
     results = analysis_data['all_results']

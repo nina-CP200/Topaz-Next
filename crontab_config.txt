@@ -11,9 +11,10 @@ PATH=/home/emmmoji/myenv/bin:/usr/local/bin:/usr/bin:/bin
 # ============================================================================
 # 任务 1: 每日 A 股分析报告 (交易日 9:45)
 # ============================================================================
-45 9 * * 1-5 /home/emmmoji/.openclaw/workspace-topaz/topaz-v3/daily_report.sh >> /home/emmmoji/.openclaw/workspace-topaz/topaz_report.log 2>&1
+# 注意：使用前请替换为实际项目路径
+45 9 * * 1-5 /path/to/topaz-v3/daily_report.sh >> /path/to/topaz_report.log 2>&1
 
 # ============================================================================
 # 任务 2: 每日投资决策与持仓更新 (交易日 10:00)
 # ============================================================================
-0 10 * * 1-5 /home/emmmoji/.openclaw/workspace-topaz/topaz-v3/daily_decision.sh >> /home/emmmoji/.openclaw/workspace-topaz/topaz_report.log 2>&1
+0 10 * * 1-5 /path/to/topaz-v3/daily_decision.sh >> /path/to/topaz_report.log 2>&1

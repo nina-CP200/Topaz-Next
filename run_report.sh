@@ -8,7 +8,8 @@
 #   ./run_report.sh --us  # 只分析美股
 #   ./run_report.sh --all # 分析全部市场
 
-cd /home/emmmoji/.openclaw/workspace-topaz/topaz-v3
+SCRIPT_DIR=$(dirname "$0")
+cd "$SCRIPT_DIR"
 
 # 加载环境变量
 source .env 2>/dev/null
@@ -23,11 +24,11 @@ MINUTE=$(date +%-M)
 # 检查是否是交易日（周末跳过）
 YESTERDAY_WEEKDAY=$(date -d "yesterday" +%w)
 if [ "$YESTERDAY_WEEKDAY" -eq 0 ] || [ "$YESTERDAY_WEEKDAY" -eq 6 ]; then
-    echo "$(date): 周末不是交易日，跳过" >> /home/emmmoji/.openclaw/workspace-topaz/topaz_report.log
+    echo "$(date): 周末不是交易日，跳过" >> "$SCRIPT_DIR/../topaz_report.log"
     exit 0
 fi
 
-LOG_FILE=/home/emmmoji/.openclaw/workspace-topaz/topaz_report.log
+LOG_FILE="$SCRIPT_DIR/../topaz_report.log"
 
 # 处理参数
 case "$1" in
@@ -52,8 +53,8 @@ case $HOUR in
         if [ "$MINUTE" -ge 0 ] && [ "$MINUTE" -lt 30 ]; then
             echo "$(date): [发送报告] 发送报告到Slack" >> $LOG_FILE
             # 调用Slack发送脚本
-            if [ -f /home/emmmoji/.openclaw/workspace-topaz/topaz-v3/send_slack_report.sh ]; then
-                /home/emmmoji/.openclaw/workspace-topaz/topaz-v3/send_slack_report.sh >> $LOG_FILE 2>&1
+            if [ -f "$SCRIPT_DIR/send_slack_report.sh" ]; then
+                "$SCRIPT_DIR/send_slack_report.sh" >> $LOG_FILE 2>&1
             fi
         fi
         ;;

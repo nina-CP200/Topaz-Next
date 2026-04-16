@@ -2,9 +2,10 @@
 # Topaz 每日投资决策与持仓更新
 # 每个交易日 10:00 运行（在报告生成后）
 
-cd /home/emmmoji/.openclaw/workspace-topaz/topaz-v3
+SCRIPT_DIR=$(dirname "$0")
+cd "$SCRIPT_DIR"
 
-LOG_FILE=/home/emmmoji/.openclaw/workspace-topaz/topaz_report.log
+LOG_FILE="$SCRIPT_DIR/../topaz_report.log"
 
 echo "" >> $LOG_FILE
 echo "========================================" >> $LOG_FILE

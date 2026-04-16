@@ -1,7 +1,8 @@
 #!/bin/bash
 # 发送完整报告到 Slack #investments 频道
 
-LOG_FILE=/home/emmmoji/.openclaw/workspace-topaz/topaz_report.log
+SCRIPT_DIR=$(dirname "$0")
+LOG_FILE="$SCRIPT_DIR/../topaz_report.log"
 SLACK_TOKEN="xoxb-10554594661939-10572535571923-MTxMlnckpizh9iZtlSyDpOT8"
 CHANNEL="#investments"
 

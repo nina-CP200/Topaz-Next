@@ -26,15 +26,26 @@ topaz-v3/
 │   ├── predict_a_share.py             # A股预测
 │   └── predict_us.py                  # 美股预测
 │
+├── 📁 模型训练
+│   ├── backtest.py                    # 回测模块 ⭐
+│   ├── retrain_model.py               # 模型重训练
+│   ├── retrain_model_walkforward.py   # 滚动训练
+│   ├── train_us_model.py              # 美股模型训练
+│   └── collect_training_data.py       # 数据采集
+│
 ├── 📁 模型文件
-│   ├── ensemble_model.pkl             # 集成模型 (6.8MB) ⭐
+│   ├── ensemble_model.pkl             # 集成模型 (4.8MB) ⭐
+│   ├── ensemble_model_csi300_latest.pkl # CSI300最新模型 (2.1MB)
+│   ├── ensemble_model_regime_based.pkl  # 基于市场状态模型
 │   ├── ensemble_scaler.pkl            # 数据标准化器
-│   ├── quick_model.pkl                # 快速模型 (224KB)
+│   ├── quick_model.pkl                # 快速模型 (220KB)
+│   ├── us_ensemble_model.pkl          # 美股模型 (15MB)
 │   ├── ensemble_model.py              # 模型类定义
 │   └── feature_engineer.py            # 特征工程
 │
 ├── 📁 数据获取
 │   ├── fetch_a_share_quotes_v2.py     # A股实时行情 v2（多源备份）⭐
+│   ├── fetch_full_history.py          # 全历史数据获取
 │   ├── quantpilot_data_api.py         # 数据 API 封装
 │   ├── market_data.py                 # 市场数据模块
 │   └── fetch_data.py                  # 通用数据获取
@@ -53,17 +64,26 @@ topaz-v3/
 ├── 📁 定时任务
 │   ├── daily_report.sh                # 每日报告脚本 ⭐
 │   ├── daily_decision.sh              # 投资决策脚本 ⭐
+│   ├── trade_execute.sh               # 交易执行脚本
+│   ├── trade_preview.sh               # 交易预告脚本
+│   ├── run_report.sh                  # 报告运行脚本
 │   ├── run_analysis.py                # 分析运行脚本
 │   └── crontab_config.txt             # Crontab 配置模板
 │
+├── 📁 报告发送
+│   ├── send_report.py                 # 报告发送模块 ⭐
+│   └── send_slack_report.sh           # Slack发送脚本
+│
 ├── 📁 股票列表
-│   ├── A股关注股票列表.md             # 25只 A股
+│   ├── A股关注股票列表.md             # A股列表
 │   ├── 美股关注股票列表.md            # 美股列表
-│   └── csi300_stocks.json             # 沪深300成分股
+│   ├── csi300_stock_list.md           # 沪深300成分股
+│   └── csi300_stocks.json             # 沪深300数据
 │
 ├── 📁 输出结果
 │   ├── predictions_today.json         # 今日预测 ⭐
 │   ├── predictions_a_share_today.json # A股预测详情
+│   ├── trade_decision_today.json      # 今日交易决策
 │   ├── daily_report_*.txt             # 每日报告
 │   ├── trading_skip_log.json          # 交易跳过日志
 │   └── data/                          # 数据缓存
@@ -116,8 +136,10 @@ python daily_decision.py
 crontab -e
 
 # 添加以下内容（已配置在 crontab_config.txt）
-45 9 * * 1-5 /home/emmmoji/.openclaw/workspace-topaz/topaz-v3/daily_report.sh
-0 10 * * 1-5 /home/emmmoji/.openclaw/workspace-topaz/topaz-v3/daily_decision.sh
+# 使用相对路径，项目可移动位置
+# 编辑 crontab 时请将路径替换为实际项目位置
+45 9 * * 1-5 /path/to/topaz-v3/daily_report.sh
+0 10 * * 1-5 /path/to/topaz-v3/daily_decision.sh
 ```
 
 ### 方法 2: OpenClaw Cron（已配置）
@@ -172,30 +194,24 @@ OpenClaw 定时任务已配置：
 - **期限**: 2026-03-20 ~ 2026-06-19
 - **策略**: Topaz V3 集成模型 + 自动调仓
 
-### 当前持仓（2026-04-03）
+### 当前持仓（2026-04-14）
 
 | 代码 | 名称 | 持仓 | 成本价 | 现价 | 市值 | 盈亏 |
 |------|------|------|--------|------|------|------|
-| 601888.SH | 中国中免 | 4,400股 | ¥70.59 | ¥70.05 | ¥308,220 | -0.77% |
-| 002465.SZ | 海格通信 | 18,100股 | ¥14.44 | ¥14.55 | ¥263,355 | +0.77% |
-| 600030.SH | 中信证券 | 6,600股 | ¥24.22 | ¥24.17 | ¥159,522 | -0.21% |
-| 601012.SH | 隆基绿能 | 5,000股 | ¥17.47 | ¥17.36 | ¥86,800 | -0.61% |
-| 000701.SZ | 厦门信达 | 7,900股 | ¥5.75 | ¥5.88 | ¥46,452 | +2.24% |
-| 688981.SH | 中芯国际 | 300股 | ¥92.40 | ¥93.20 | ¥27,960 | +0.87% |
-| 600111.SH | 北方稀土 | 400股 | ¥47.90 | ¥47.58 | ¥19,032 | -0.67% |
+| 300059.SZ | 东方财富 | 4,800股 | ¥19.92 | ¥19.93 | ¥95,664 | +0.05% |
 
 **当前状态**:
-- 总资产: ¥1,003,692
-- 累计盈亏: +¥3,692 (+0.37%)
-- 持仓市值: ¥911,341
-- 现金: ¥92,351
-- 仓位: 90.8%
-- 持仓股票: 7只
+- 总资产: ¥971,003
+- 累计盈亏: -¥28,997 (-2.90%)
+- 持仓市值: ¥95,664
+- 现金: ¥875,339
+- 仓位: 9.8%
+- 持仓股票: 1只
 
 **投资挑战**:
 - 期限: 2026-03-20 ~ 2026-06-19（3个月）
 - 目标: 跑赢沪深300指数 5%
-- 当前: +0.37% vs 沪深300
+- 当前: -2.90% vs 沪深300
 
 ---
 
@@ -307,9 +323,9 @@ channel: slack:investments
 
 ## 📊 项目统计
 
-- **代码行数**: ~15,230 行（Python 9,325 行）
-- **Python文件**: 29 个
-- **模型**: Ensemble (XGBoost + LightGBM + CatBoost)
+- **代码行数**: ~11,506 行（Python）
+- **Python文件**: 34 个
+- **模型**: Ensemble (XGBoost + LightGBM + CatBoost) + CSI300模型 + 美股模型
 - **特征**: 45 个因子
 - **数据源**: 腾讯财经、新浪财经、东方财富
 

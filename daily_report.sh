@@ -2,9 +2,10 @@
 # Topaz 每日 A 股分析报告
 # 每个交易日 9:45 运行
 
-cd /home/emmmoji/.openclaw/workspace-topaz/topaz-v3
+SCRIPT_DIR=$(dirname "$0")
+cd "$SCRIPT_DIR"
 
-LOG_FILE=/home/emmmoji/.openclaw/workspace-topaz/topaz_report.log
+LOG_FILE="$SCRIPT_DIR/../topaz_report.log"
 
 # 检查是否是交易日（周末跳过）
 WEEKDAY=$(date +%w)
@@ -15,7 +16,7 @@ fi
 
 # 检查 A 股休市（元旦、春节、清明、劳动节、端午、中秋、国庆等）
 # 简化处理：只检查周末，节假日需要手动维护列表
-HOLIDAY_FILE="/home/emmmoji/.openclaw/workspace-topaz/topaz-v3/holidays.txt"
+HOLIDAY_FILE="$SCRIPT_DIR/holidays.txt"
 TODAY=$(date +%Y-%m-%d)
 if [ -f "$HOLIDAY_FILE" ] && grep -q "$TODAY" "$HOLIDAY_FILE"; then
     echo "$(date): 今天是节假日 ($TODAY)，跳过" >> $LOG_FILE
