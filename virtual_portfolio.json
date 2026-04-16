@@ -1,102 +1,84 @@
 {
   "initial_capital": 1000000,
-  "cash": 377819.0,
+  "cash": 492794.0,
   "holdings": {
-    "300502.SZ": {
-      "name": "新易盛",
-      "shares": 100,
-      "cost": 492.2,
-      "current_price": 507.86
-    },
     "688223.SH": {
       "name": "晶科能源",
       "shares": 11000,
       "cost": 6.69,
-      "current_price": 6.73
+      "current_price": 7.09
     },
     "600115.SH": {
       "name": "中国东航",
       "shares": 15400,
       "cost": 4.4,
-      "current_price": 4.45
+      "current_price": 4.43
     },
     "300750.SZ": {
       "name": "宁德时代",
       "shares": 100,
       "cost": 429.41,
-      "current_price": 448.85
+      "current_price": 455.03
     },
     "688111.SH": {
       "name": "金山办公",
       "shares": 100,
       "cost": 243.2,
-      "current_price": 249.33
+      "current_price": 252.39
     },
     "605499.SH": {
       "name": "东鹏饮料",
       "shares": 100,
       "cost": 193.75,
-      "current_price": 192.61
+      "current_price": 194.14
     },
     "600438.SH": {
       "name": "通威股份",
       "shares": 3100,
       "cost": 17.62,
-      "current_price": 17.63
+      "current_price": 17.6
     },
     "300274.SZ": {
       "name": "阳光电源",
       "shares": 300,
       "cost": 134.52,
-      "current_price": 134.6
-    },
-    "000596.SZ": {
-      "name": "古井贡酒",
-      "shares": 400,
-      "cost": 105.57,
-      "current_price": 105.75
-    },
-    "600547.SH": {
-      "name": "山东黄金",
-      "shares": 1100,
-      "cost": 38.62,
-      "current_price": 38.62
+      "current_price": 134.18
     },
     "300251.SZ": {
       "name": "光线传媒",
       "shares": 2500,
       "cost": 16.1,
-      "current_price": 16.1
+      "current_price": 16.18
     },
-    "600887.SH": {
-      "name": "伊利股份",
-      "shares": 1400,
-      "cost": 25.64,
-      "current_price": 25.64
-    },
-    "300803.SZ": {
-      "name": "指南针",
+    "300760.SZ": {
+      "name": "迈瑞医疗",
       "shares": 200,
-      "cost": 99.75,
-      "current_price": 99.46
+      "cost": 160.36,
+      "current_price": 160.41
     },
-    "301269.SZ": {
-      "name": "华大九天",
-      "shares": 200,
-      "cost": 84.71,
-      "current_price": 84.75
+    "000625.SZ": {
+      "name": "长安汽车",
+      "shares": 3400,
+      "cost": 10.15,
+      "current_price": 10.15
     },
-    "688271.SH": {
-      "name": "联影医疗",
+    "002384.SZ": {
+      "name": "东山精密",
       "shares": 200,
-      "cost": 113.74,
-      "current_price": 113.66
+      "cost": 147.3,
+      "current_price": 148.2
+    },
+    "300033.SZ": {
+      "name": "同花顺",
+      "shares": 100,
+      "cost": 239.8,
+      "current_price": 240.19
     }
   },
-  "holdings_value": 597960.0,
-  "total_value": 975779.0,
-  "pnl": -24221.0,
-  "pnl_pct": -2.42,
+  "holdings_value": 491883.0,
+  "total_value": 984677.0,
+  "pnl": -15323.0,
+  "pnl_pct": -1.53,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
@@ -933,6 +915,127 @@
       "price": 113.74,
       "amount": 22748.0,
       "reason": "评分0.68(概率58.4%, 预测收益1.7%), 仓位6%"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "000596.SZ",
+      "name": "古井贡酒",
+      "shares": 400,
+      "price": 106.75,
+      "amount": 42700.0,
+      "reason": "ML建议回避(概率30.8%)"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "300502.SZ",
+      "name": "新易盛",
+      "shares": 100,
+      "price": 534.7,
+      "amount": 53470.00000000001,
+      "reason": "止盈: 盈利8.6%, 评分55.7%"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "300803.SZ",
+      "name": "指南针",
+      "shares": 200,
+      "price": 100.02,
+      "amount": 20004.0,
+      "reason": "ML建议回避(概率31.1%)"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "301269.SZ",
+      "name": "华大九天",
+      "shares": 200,
+      "price": 85.15,
+      "amount": 17030.0,
+      "reason": "ML建议回避(概率32.1%)"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "600547.SH",
+      "name": "山东黄金",
+      "shares": 1100,
+      "price": 39.15,
+      "amount": 43065.0,
+      "reason": "ML建议回避(概率34.0%)"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "600887.SH",
+      "name": "伊利股份",
+      "shares": 1400,
+      "price": 25.6,
+      "amount": 35840.0,
+      "reason": "ML建议回避(概率28.5%)"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "sell",
+      "code": "688271.SH",
+      "name": "联影医疗",
+      "shares": 200,
+      "price": 114.44,
+      "amount": 22888.0,
+      "reason": "ML建议回避(概率23.5%)"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "buy",
+      "code": "300760.SZ",
+      "name": "迈瑞医疗",
+      "shares": 200,
+      "price": 160.36,
+      "amount": 32072.000000000004,
+      "reason": "评分0.68(概率58.3%, 预测收益1.7%), 仓位6%"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "buy",
+      "code": "000625.SZ",
+      "name": "长安汽车",
+      "shares": 3400,
+      "price": 10.15,
+      "amount": 34510.0,
+      "reason": "评分0.63(概率56.1%, 预测收益1.2%), 仓位6%"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "buy",
+      "code": "002384.SZ",
+      "name": "东山精密",
+      "shares": 200,
+      "price": 147.3,
+      "amount": 29460.000000000004,
+      "reason": "评分0.61(概率55.2%, 预测收益1.0%), 仓位6%"
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "type": "buy",
+      "code": "300033.SZ",
+      "name": "同花顺",
+      "shares": 100,
+      "price": 239.8,
+      "amount": 23980.0,
+      "reason": "评分0.61(概率55.1%, 预测收益1.0%), 仓位6%"
     }
   ],
   "daily_values": [
@@ -1285,6 +1388,24 @@
       "total_value": 975779.0,
       "pnl": -24221.0,
       "pnl_pct": -2.42
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:33",
+      "cash": 492794.0,
+      "holdings_value": 491706.0,
+      "total_value": 984500.0,
+      "pnl": -15500.0,
+      "pnl_pct": -1.55
+    },
+    {
+      "date": "2026-04-16",
+      "time": "14:35",
+      "cash": 492794.0,
+      "holdings_value": 491883.0,
+      "total_value": 984677.0,
+      "pnl": -15323.0,
+      "pnl_pct": -1.53
     }
   ]
 }
