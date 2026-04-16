@@ -1,4 +1,4 @@
-# Topaz V3 - 智能量化投资分析系统
+# Topaz-Next - 智能量化投资分析系统
 
 基于多因子量化评估 + 机器学习的 A 股投资分析与自动交易系统。
 
@@ -18,7 +18,7 @@
 ## 📁 项目结构
 
 ```
-topaz-v3/
+topaz-next/
 ├── 📁 核心分析
 │   ├── ml_stock_analysis_ensemble.py  # 集成模型分析（主脚本）⭐
 │   ├── ml_stock_analysis.py           # 快速模型分析
@@ -138,8 +138,8 @@ crontab -e
 # 添加以下内容（已配置在 crontab_config.txt）
 # 使用相对路径，项目可移动位置
 # 编辑 crontab 时请将路径替换为实际项目位置
-45 9 * * 1-5 /path/to/topaz-v3/daily_report.sh
-0 10 * * 1-5 /path/to/topaz-v3/daily_decision.sh
+45 9 * * 1-5 /path/to/topaz-next/daily_report.sh
+0 10 * * 1-5 /path/to/topaz-next/daily_decision.sh
 ```
 
 ### 方法 2: OpenClaw Cron（已配置）
@@ -192,7 +192,7 @@ OpenClaw 定时任务已配置：
 - **初始资金**: 100 万人民币
 - **目标**: 3 个月内跑赢沪深 300 指数 5%
 - **期限**: 2026-03-20 ~ 2026-06-19
-- **策略**: Topaz V3 集成模型 + 自动调仓
+- **策略**: Topaz-Next 集成模型 + 自动调仓
 
 ### 当前持仓（2026-04-14）
 
@@ -337,4 +337,4 @@ MIT License
 
 ---
 
-**Topaz V3** - 智能量化投资，让数据驱动决策 🔮
+**Topaz-Next** - 智能量化投资，让数据驱动决策 🔮

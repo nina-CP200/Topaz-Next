@@ -1,4 +1,4 @@
-# Topaz-V3 + Qlib 量化模型整合
+# Topaz-Next + Qlib 量化模型整合
 
 ## 修改内容
 
@@ -58,7 +58,7 @@ pip install -r requirements.txt
 ## 文件结构
 
 ```
-topaz-v3/
+topaz-next/
 ├── qlib_model.py              # Qlib 量化模型（新增）
 ├── topaz_analysis_v3_full.py  # 主程序（已修改）
 ├── topaz_analysis_v3_full.py.bak  # 原备份

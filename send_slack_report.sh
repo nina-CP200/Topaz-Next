@@ -12,7 +12,7 @@ sleep 1
 curl -s -X POST https://slack.com/api/chat.postMessage \
     -H "Authorization: Bearer $SLACK_TOKEN" \
     -H "Content-Type: application/json; charset=utf-8" \
-    -d "{\"channel\": \"$CHANNEL\", \"text\": $(echo "📊 Topaz V3 多因子分析报告 - $(date +%Y-%m-%d)" | jq -Rs .)}"
+-d "{\"channel\": \"$CHANNEL\", \"text\": $(echo \"📊 Topaz-Next 多因子分析报告 - $(date +%Y-%m-%d)\" | jq -Rs .)}"
 
 sleep 1
 
