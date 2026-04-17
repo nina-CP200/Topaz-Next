@@ -1,84 +1,114 @@
 {
   "initial_capital": 1000000,
-  "cash": 492794.0,
+  "cash": 326033.0,
   "holdings": {
     "688223.SH": {
       "name": "晶科能源",
       "shares": 11000,
       "cost": 6.69,
-      "current_price": 7.09
+      "current_price": 6.98
     },
     "600115.SH": {
       "name": "中国东航",
       "shares": 15400,
       "cost": 4.4,
-      "current_price": 4.43
-    },
-    "300750.SZ": {
-      "name": "宁德时代",
-      "shares": 100,
-      "cost": 429.41,
-      "current_price": 455.03
+      "current_price": 4.38
     },
     "688111.SH": {
       "name": "金山办公",
       "shares": 100,
       "cost": 243.2,
-      "current_price": 252.39
+      "current_price": 249.65
     },
     "605499.SH": {
       "name": "东鹏饮料",
       "shares": 100,
       "cost": 193.75,
-      "current_price": 194.14
+      "current_price": 196.68
     },
     "600438.SH": {
       "name": "通威股份",
       "shares": 3100,
       "cost": 17.62,
-      "current_price": 17.6
+      "current_price": 17.41
     },
     "300274.SZ": {
       "name": "阳光电源",
       "shares": 300,
       "cost": 134.52,
-      "current_price": 134.18
+      "current_price": 133.29
     },
     "300251.SZ": {
       "name": "光线传媒",
       "shares": 2500,
       "cost": 16.1,
-      "current_price": 16.18
+      "current_price": 15.96
     },
     "300760.SZ": {
       "name": "迈瑞医疗",
       "shares": 200,
       "cost": 160.36,
-      "current_price": 160.41
-    },
-    "000625.SZ": {
-      "name": "长安汽车",
-      "shares": 3400,
-      "cost": 10.15,
-      "current_price": 10.15
-    },
-    "002384.SZ": {
-      "name": "东山精密",
-      "shares": 200,
-      "cost": 147.3,
-      "current_price": 148.2
+      "current_price": 158.14
     },
     "300033.SZ": {
       "name": "同花顺",
       "shares": 100,
       "cost": 239.8,
-      "current_price": 240.19
+      "current_price": 235.91
+    },
+    "000596.SZ": {
+      "name": "古井贡酒",
+      "shares": 500,
+      "cost": 104.95,
+      "current_price": 104.74
+    },
+    "600029.SH": {
+      "name": "南方航空",
+      "shares": 9600,
+      "cost": 5.72,
+      "current_price": 5.72
+    },
+    "301269.SZ": {
+      "name": "华大九天",
+      "shares": 500,
+      "cost": 85.37,
+      "current_price": 85.3
+    },
+    "002028.SZ": {
+      "name": "思源电气",
+      "shares": 100,
+      "cost": 216.05,
+      "current_price": 215.83
+    },
+    "000425.SZ": {
+      "name": "徐工机械",
+      "shares": 3400,
+      "cost": 10.07,
+      "current_price": 10.05
+    },
+    "600547.SH": {
+      "name": "山东黄金",
+      "shares": 800,
+      "cost": 38.77,
+      "current_price": 38.68
+    },
+    "600887.SH": {
+      "name": "伊利股份",
+      "shares": 800,
+      "cost": 25.46,
+      "current_price": 25.46
+    },
+    "300803.SZ": {
+      "name": "指南针",
+      "shares": 200,
+      "cost": 98.2,
+      "current_price": 98.19
     }
   },
-  "holdings_value": 491883.0,
-  "total_value": 984677.0,
-  "pnl": -15323.0,
-  "pnl_pct": -1.53,
+  "holdings_value": 654577.0,
+  "total_value": 980610.0,
+  "pnl": -19390.0,
+  "pnl_pct": -1.94,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
@@ -1036,6 +1066,127 @@
       "price": 239.8,
       "amount": 23980.0,
       "reason": "评分0.61(概率55.1%, 预测收益1.0%), 仓位6%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "sell",
+      "code": "000625.SZ",
+      "name": "长安汽车",
+      "shares": 3400,
+      "price": 10.11,
+      "amount": 34374.0,
+      "reason": "ML建议回避(概率24.9%)"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "sell",
+      "code": "002384.SZ",
+      "name": "东山精密",
+      "shares": 200,
+      "price": 156.91,
+      "amount": 31382.0,
+      "reason": "换仓: 盈利6.5%, 评分41.7% → 古井贡酒评分69.6%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "sell",
+      "code": "300750.SZ",
+      "name": "宁德时代",
+      "shares": 100,
+      "price": 444.22,
+      "amount": 44422.0,
+      "reason": "ML建议回避(概率39.7%)"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "000596.SZ",
+      "name": "古井贡酒",
+      "shares": 500,
+      "price": 104.95,
+      "amount": 52475.0,
+      "reason": "评分0.97(概率69.6%, 预测收益3.9%), 仓位10%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600029.SH",
+      "name": "南方航空",
+      "shares": 9600,
+      "price": 5.72,
+      "amount": 54912.0,
+      "reason": "评分0.84(概率64.7%, 预测收益2.9%), 仓位10%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "301269.SZ",
+      "name": "华大九天",
+      "shares": 500,
+      "price": 85.37,
+      "amount": 42685.0,
+      "reason": "评分0.83(概率64.3%, 预测收益2.9%), 仓位10%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "002028.SZ",
+      "name": "思源电气",
+      "shares": 100,
+      "price": 216.05,
+      "amount": 21605.0,
+      "reason": "评分0.79(概率62.8%, 预测收益2.6%), 仓位8%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "000425.SZ",
+      "name": "徐工机械",
+      "shares": 3400,
+      "price": 10.07,
+      "amount": 34238.0,
+      "reason": "评分0.72(概率60.2%, 预测收益2.0%), 仓位8%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600547.SH",
+      "name": "山东黄金",
+      "shares": 800,
+      "price": 38.77,
+      "amount": 31016.000000000004,
+      "reason": "评分0.72(概率60.1%, 预测收益2.0%), 仓位8%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600887.SH",
+      "name": "伊利股份",
+      "shares": 800,
+      "price": 25.46,
+      "amount": 20368.0,
+      "reason": "评分0.70(概率59.1%, 预测收益1.8%), 仓位6%"
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "type": "buy",
+      "code": "300803.SZ",
+      "name": "指南针",
+      "shares": 200,
+      "price": 98.2,
+      "amount": 19640.0,
+      "reason": "评分0.68(概率58.5%, 预测收益1.7%), 仓位6%"
     }
   ],
   "daily_values": [
@@ -1406,6 +1557,15 @@
       "total_value": 984677.0,
       "pnl": -15323.0,
       "pnl_pct": -1.53
+    },
+    {
+      "date": "2026-04-17",
+      "time": "09:47",
+      "cash": 326033.0,
+      "holdings_value": 654577.0,
+      "total_value": 980610.0,
+      "pnl": -19390.0,
+      "pnl_pct": -1.94
     }
   ]
 }
