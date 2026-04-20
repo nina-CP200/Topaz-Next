@@ -19,78 +19,72 @@
 
 ```
 topaz-next/
-├── 📁 核心分析
-│   ├── ml_stock_analysis_ensemble.py  # 集成模型分析（主脚本）⭐
-│   ├── ml_stock_analysis.py           # 快速模型分析
+├── 📁 核心分析（生产入口）
+│   ├── ml_stock_analysis_ensemble.py  # 集成模型分析（主入口）⭐
 │   ├── daily_decision.py              # 每日投资决策 ⭐
-│   ├── predict_a_share.py             # A股预测
-│   └── predict_us.py                  # 美股预测
+│   ├── predict_a_share.py             # A股预测（独立工具）
+│   └── predict_us.py                  # 美股预测（独立工具）
 │
-├── 📁 模型训练
-│   ├── backtest.py                    # 回测模块 ⭐
+├── 📁 核心模块（被多处引用）
+│   ├── ensemble_model.py              # 集成模型类定义 ⭐
+│   ├── feature_engineer.py            # 特征工程（45因子） ⭐
+│   ├── quantpilot_data_api.py         # 统一数据API ⭐
+│   ├── market_data.py                 # 市场指数数据
+│   ├── trading_utils.py               # 交易日检查 ⭐
+│   └── utils.py                       # 通用工具
+│
+├── 📁 辅助模块
+│   ├── qlib_predictor.py              # Qlib风格预测器
+│   ├── quantpilot_predictor.py        # QuantPilot预测器
+│   ├── risk_management.py             # 风险管理
+│   ├── deep_learning.py               # 深度学习模块
+│   ├── ml_stock_analysis.py           # 快速模型（备用）
+│   └── ml_sector_trainer.py           # 板块训练器
+│
+├── 📁 数据获取
+│   ├── fetch_a_share_quotes_v2.py     # A股实时行情（多源备份）
+│   ├── fetch_full_history.py          # 全历史数据获取
+│   └── fetch_training_data.py         # 沪深300历史数据
+│
+├── 📁 模型训练/回测（开发工具）
+│   ├── backtest.py                    # 回测系统 ⭐
 │   ├── retrain_model.py               # 模型重训练
 │   ├── retrain_model_walkforward.py   # 滚动训练
 │   ├── train_us_model.py              # 美股模型训练
-│   └── collect_training_data.py       # 数据采集
+│   ├── collect_training_data.py       # 完整数据收集
+│   └── update_portfolio.py            # 持仓手动更新
 │
-├── 📁 模型文件
-│   ├── ensemble_model.pkl             # 集成模型 (4.8MB) ⭐
-│   ├── ensemble_model_csi300_latest.pkl # CSI300最新模型 (2.1MB)
-│   ├── ensemble_model_regime_based.pkl  # 基于市场状态模型
-│   ├── ensemble_scaler.pkl            # 数据标准化器
-│   ├── quick_model.pkl                # 快速模型 (220KB)
-│   ├── us_ensemble_model.pkl          # 美股模型 (15MB)
-│   ├── ensemble_model.py              # 模型类定义
-│   └── feature_engineer.py            # 特征工程
-│
-├── 📁 数据获取
-│   ├── fetch_a_share_quotes_v2.py     # A股实时行情 v2（多源备份）⭐
-│   ├── fetch_full_history.py          # 全历史数据获取
-│   ├── quantpilot_data_api.py         # 数据 API 封装
-│   ├── market_data.py                 # 市场数据模块
-│   └── fetch_data.py                  # 通用数据获取
-│
-├── 📁 交易执行
-│   ├── execute_trading.py             # 交易执行（带交易日检查）⭐
-│   ├── trading_utils.py               # 交易工具（交易日验证）⭐
-│   ├── execute_trades.py              # 交易执行辅助
-│   └── daily_decision.py              # 每日投资决策
-│
-├── 📁 投资组合
-│   ├── virtual_portfolio.json         # 虚拟组合状态 ⭐
-│   ├── update_portfolio.py            # 持仓更新
-│   └── risk_management.py             # 风险管理
-│
-├── 📁 定时任务
-│   ├── daily_report.sh                # 每日报告脚本 ⭐
-│   ├── daily_decision.sh              # 投资决策脚本 ⭐
-│   ├── trade_execute.sh               # 交易执行脚本
-│   ├── trade_preview.sh               # 交易预告脚本
-│   ├── run_report.sh                  # 报告运行脚本
-│   ├── run_analysis.py                # 分析运行脚本
-│   └── crontab_config.txt             # Crontab 配置模板
+├── 📁 定时任务脚本
+│   ├── daily_report.sh                # 每日报告 ⭐
+│   ├── daily_decision.sh              # 投资决策 ⭐
+│   ├── trade_execute.sh               # 交易执行
+│   ├── trade_preview.sh               # 交易预告
+│   └── send_slack_report.sh           # Slack发送
 │
 ├── 📁 报告发送
 │   ├── send_report.py                 # 报告发送模块 ⭐
-│   └── send_slack_report.sh           # Slack发送脚本
+│   └── execute_trading.py             # 交易执行（带验证）
 │
-├── 📁 股票列表
-│   ├── A股关注股票列表.md             # A股列表
-│   ├── 美股关注股票列表.md            # 美股列表
-│   ├── csi300_stock_list.md           # 沪深300成分股
-│   └── csi300_stocks.json             # 沪深300数据
+├── 📁 模型文件（.pkl）
+│   ├── ensemble_model.pkl             # 集成模型 ⭐
+│   ├── ensemble_model_csi300_latest.pkl
+│   ├── ensemble_scaler.pkl
+│   ├── quick_model.pkl
+│   └── us_ensemble_model.pkl
 │
-├── 📁 输出结果
-│   ├── predictions_today.json         # 今日预测 ⭐
-│   ├── predictions_a_share_today.json # A股预测详情
-│   ├── trade_decision_today.json      # 今日交易决策
-│   ├── daily_report_*.txt             # 每日报告
-│   ├── trading_skip_log.json          # 交易跳过日志
-│   └── data/                          # 数据缓存
+├── 📁 数据/输出
+│   ├── virtual_portfolio.json         # 虚拟组合状态 ⭐
+│   ├── predictions_today.json         # 今日预测
+│   ├── trade_decision_today.json      # 今日决策
+│   ├── csi300_stocks.json             # 沪深300列表
+│   ├── reports/                       # 每日报告存档
+│   └── models/                        # 模型状态日志
 │
-└── 📁 配置
-    ├── .env                           # API Keys
-    └── README.md                      # 本文件
+└── 📁 配置/文档
+    ├── .env.example                   # API Keys模板
+    ├── README.md                      # 本文件
+    ├── A股关注股票列表.md
+    └── 美股关注股票列表.md
 ```
 
 ---
@@ -288,12 +282,17 @@ channel: slack:investments
 **修复**:
 - 新增 `trading_utils.py`: 交易日检查、节假日数据
 - 新增 `execute_trading.py`: 交易执行前验证交易日
-- 更新 `run_analysis.py`: 添加交易日检查提示
 - 恢复持仓至4月3日状态
 
 ---
 
 ## 📝 更新日志
+
+### 2026-04-17
+- ✅ 项目重命名：Topaz V3 → Topaz-Next
+- ✅ 清理冗余文件（删除8个未使用文件）
+- ✅ 删除过时文档（README_QLIB.md）
+- ✅ 更新项目结构和文档
 
 ### 2026-04-06
 - ✅ 修复节假日交易Bug（4月6日清明节）
@@ -323,8 +322,9 @@ channel: slack:investments
 
 ## 📊 项目统计
 
-- **代码行数**: ~11,506 行（Python）
-- **Python文件**: 34 个
+- **代码行数**: ~9,958 行（Python）
+- **Python文件**: 27 个
+- **Shell脚本**: 5 个
 - **模型**: Ensemble (XGBoost + LightGBM + CatBoost) + CSI300模型 + 美股模型
 - **特征**: 45 个因子
 - **数据源**: 腾讯财经、新浪财经、东方财富

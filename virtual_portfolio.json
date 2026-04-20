@@ -1,114 +1,90 @@
 {
   "initial_capital": 1000000,
-  "cash": 326033.0,
+  "cash": 445474.0,
   "holdings": {
     "688223.SH": {
       "name": "晶科能源",
       "shares": 11000,
       "cost": 6.69,
-      "current_price": 6.98
+      "current_price": 7.0
     },
     "600115.SH": {
       "name": "中国东航",
       "shares": 15400,
       "cost": 4.4,
-      "current_price": 4.38
+      "current_price": 4.47
     },
     "688111.SH": {
       "name": "金山办公",
       "shares": 100,
       "cost": 243.2,
-      "current_price": 249.65
+      "current_price": 248.19
     },
     "605499.SH": {
       "name": "东鹏饮料",
       "shares": 100,
       "cost": 193.75,
-      "current_price": 196.68
+      "current_price": 199.86
     },
     "600438.SH": {
       "name": "通威股份",
       "shares": 3100,
       "cost": 17.62,
-      "current_price": 17.41
+      "current_price": 17.9
     },
     "300274.SZ": {
       "name": "阳光电源",
       "shares": 300,
       "cost": 134.52,
-      "current_price": 133.29
+      "current_price": 133.5
     },
     "300251.SZ": {
       "name": "光线传媒",
       "shares": 2500,
       "cost": 16.1,
-      "current_price": 15.96
+      "current_price": 16.44
     },
     "300760.SZ": {
       "name": "迈瑞医疗",
       "shares": 200,
       "cost": 160.36,
-      "current_price": 158.14
+      "current_price": 156.15
     },
     "300033.SZ": {
       "name": "同花顺",
       "shares": 100,
       "cost": 239.8,
-      "current_price": 235.91
-    },
-    "000596.SZ": {
-      "name": "古井贡酒",
-      "shares": 500,
-      "cost": 104.95,
-      "current_price": 104.74
+      "current_price": 245.17
     },
     "600029.SH": {
       "name": "南方航空",
       "shares": 9600,
       "cost": 5.72,
-      "current_price": 5.72
-    },
-    "301269.SZ": {
-      "name": "华大九天",
-      "shares": 500,
-      "cost": 85.37,
-      "current_price": 85.3
+      "current_price": 5.76
     },
     "002028.SZ": {
       "name": "思源电气",
       "shares": 100,
       "cost": 216.05,
-      "current_price": 215.83
+      "current_price": 205.91
     },
     "000425.SZ": {
       "name": "徐工机械",
       "shares": 3400,
       "cost": 10.07,
-      "current_price": 10.05
+      "current_price": 9.63
     },
-    "600547.SH": {
-      "name": "山东黄金",
-      "shares": 800,
-      "cost": 38.77,
-      "current_price": 38.68
-    },
-    "600887.SH": {
-      "name": "伊利股份",
-      "shares": 800,
-      "cost": 25.46,
-      "current_price": 25.46
-    },
-    "300803.SZ": {
-      "name": "指南针",
-      "shares": 200,
-      "cost": 98.2,
-      "current_price": 98.19
+    "002384.SZ": {
+      "name": "东山精密",
+      "shares": 300,
+      "cost": 162.59,
+      "current_price": 163.0
     }
   },
-  "holdings_value": 654577.0,
-  "total_value": 980610.0,
-  "pnl": -19390.0,
-  "pnl_pct": -1.94,
+  "holdings_value": 540559.0,
+  "total_value": 986033.0,
+  "pnl": -13967.0,
+  "pnl_pct": -1.4,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
@@ -1187,6 +1163,72 @@
       "price": 98.2,
       "amount": 19640.0,
       "reason": "评分0.68(概率58.5%, 预测收益1.7%), 仓位6%"
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "type": "sell",
+      "code": "000596.SZ",
+      "name": "古井贡酒",
+      "shares": 500,
+      "price": 104.22,
+      "amount": 52110.0,
+      "reason": "ML建议回避(概率39.5%)"
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "type": "sell",
+      "code": "300803.SZ",
+      "name": "指南针",
+      "shares": 200,
+      "price": 101.08,
+      "amount": 20216.0,
+      "reason": "ML建议回避(概率30.3%)"
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "type": "sell",
+      "code": "301269.SZ",
+      "name": "华大九天",
+      "shares": 500,
+      "price": 88.84,
+      "amount": 44420.0,
+      "reason": "ML建议回避(概率30.5%)"
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "type": "sell",
+      "code": "600547.SH",
+      "name": "山东黄金",
+      "shares": 800,
+      "price": 39.01,
+      "amount": 31208.0,
+      "reason": "ML建议回避(概率34.0%)"
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "type": "sell",
+      "code": "600887.SH",
+      "name": "伊利股份",
+      "shares": 800,
+      "price": 25.33,
+      "amount": 20264.0,
+      "reason": "ML建议回避(概率39.4%)"
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "type": "buy",
+      "code": "002384.SZ",
+      "name": "东山精密",
+      "shares": 300,
+      "price": 162.59,
+      "amount": 48777.0,
+      "reason": "评分0.86(概率65.6%, 预测收益3.1%), 仓位10%"
     }
   ],
   "daily_values": [
@@ -1566,6 +1608,24 @@
       "total_value": 980610.0,
       "pnl": -19390.0,
       "pnl_pct": -1.94
+    },
+    {
+      "date": "2026-04-17",
+      "time": "14:32",
+      "cash": 326033.0,
+      "holdings_value": 656284.0,
+      "total_value": 982317.0,
+      "pnl": -17683.0,
+      "pnl_pct": -1.77
+    },
+    {
+      "date": "2026-04-20",
+      "time": "09:47",
+      "cash": 445474.0,
+      "holdings_value": 540559.0,
+      "total_value": 986033.0,
+      "pnl": -13967.0,
+      "pnl_pct": -1.4
     }
   ]
 }
