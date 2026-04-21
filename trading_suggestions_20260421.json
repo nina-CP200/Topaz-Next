@@ -1,0 +1,22 @@
+{
+  "date": "2026-04-21",
+  "time": "14:35:38",
+  "trading_status": {
+    "can_trade": true,
+    "is_trading_day": true,
+    "is_trading_hours": true,
+    "last_trading_day": "2026-04-21",
+    "message": "可以正常交易"
+  },
+  "data_validation": {
+    "valid": true,
+    "issues": [],
+    "data_date": "2026-04-21"
+  },
+  "suggestions": [],
+  "portfolio_summary": {
+    "cash": 478781.0,
+    "holdings_count": 13,
+    "total_value": 995222.0
+  }
+}

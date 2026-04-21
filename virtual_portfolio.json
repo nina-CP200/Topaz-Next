@@ -1,90 +1,90 @@
 {
   "initial_capital": 1000000,
-  "cash": 445474.0,
+  "cash": 478781.0,
   "holdings": {
     "688223.SH": {
       "name": "晶科能源",
       "shares": 11000,
       "cost": 6.69,
-      "current_price": 7.0
-    },
-    "600115.SH": {
-      "name": "中国东航",
-      "shares": 15400,
-      "cost": 4.4,
-      "current_price": 4.47
-    },
-    "688111.SH": {
-      "name": "金山办公",
-      "shares": 100,
-      "cost": 243.2,
-      "current_price": 248.19
+      "current_price": 6.87
     },
     "605499.SH": {
       "name": "东鹏饮料",
       "shares": 100,
       "cost": 193.75,
-      "current_price": 199.86
+      "current_price": 201.46
     },
     "600438.SH": {
       "name": "通威股份",
       "shares": 3100,
       "cost": 17.62,
-      "current_price": 17.9
+      "current_price": 18.25
     },
     "300274.SZ": {
       "name": "阳光电源",
       "shares": 300,
       "cost": 134.52,
-      "current_price": 133.5
-    },
-    "300251.SZ": {
-      "name": "光线传媒",
-      "shares": 2500,
-      "cost": 16.1,
-      "current_price": 16.44
+      "current_price": 135.92
     },
     "300760.SZ": {
       "name": "迈瑞医疗",
       "shares": 200,
       "cost": 160.36,
-      "current_price": 156.15
+      "current_price": 158.62
     },
     "300033.SZ": {
       "name": "同花顺",
       "shares": 100,
       "cost": 239.8,
-      "current_price": 245.17
+      "current_price": 245.51
     },
     "600029.SH": {
       "name": "南方航空",
       "shares": 9600,
       "cost": 5.72,
-      "current_price": 5.76
-    },
-    "002028.SZ": {
-      "name": "思源电气",
-      "shares": 100,
-      "cost": 216.05,
-      "current_price": 205.91
+      "current_price": 5.78
     },
     "000425.SZ": {
       "name": "徐工机械",
       "shares": 3400,
       "cost": 10.07,
-      "current_price": 9.63
+      "current_price": 10.1
     },
     "002384.SZ": {
       "name": "东山精密",
       "shares": 300,
       "cost": 162.59,
-      "current_price": 163.0
+      "current_price": 169.08
+    },
+    "300476.SZ": {
+      "name": "胜宏科技",
+      "shares": 100,
+      "cost": 330.86,
+      "current_price": 331.25
+    },
+    "300782.SZ": {
+      "name": "卓胜微",
+      "shares": 300,
+      "cost": 111.99,
+      "current_price": 112.05
+    },
+    "600690.SH": {
+      "name": "海尔智家",
+      "shares": 1500,
+      "cost": 20.82,
+      "current_price": 20.83
+    },
+    "605117.SH": {
+      "name": "德业股份",
+      "shares": 200,
+      "cost": 142.82,
+      "current_price": 142.81
     }
   },
-  "holdings_value": 540559.0,
-  "total_value": 986033.0,
-  "pnl": -13967.0,
-  "pnl_pct": -1.4,
+  "holdings_value": 516441.0,
+  "total_value": 995222.0,
+  "pnl": -4778.0,
+  "pnl_pct": -0.48,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
@@ -1229,6 +1229,94 @@
       "price": 162.59,
       "amount": 48777.0,
       "reason": "评分0.86(概率65.6%, 预测收益3.1%), 仓位10%"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "09:47",
+      "type": "sell",
+      "code": "688111.SH",
+      "name": "金山办公",
+      "shares": 100,
+      "price": 246.37,
+      "amount": 24637.0,
+      "reason": "ML建议回避(概率38.4%)"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "sell",
+      "code": "002028.SZ",
+      "name": "思源电气",
+      "shares": 100,
+      "price": 215.95,
+      "amount": 21595.0,
+      "reason": "ML建议回避(概率37.3%)"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "sell",
+      "code": "300251.SZ",
+      "name": "光线传媒",
+      "shares": 2500,
+      "price": 16.9,
+      "amount": 42250.0,
+      "reason": "ML建议回避(概率39.9%)"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "sell",
+      "code": "600115.SH",
+      "name": "中国东航",
+      "shares": 15400,
+      "price": 4.63,
+      "amount": 71302.0,
+      "reason": "换仓: 盈利5.2%, 评分55.4% → 东山精密评分64.7%"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "buy",
+      "code": "300476.SZ",
+      "name": "胜宏科技",
+      "shares": 100,
+      "price": 330.86,
+      "amount": 33086.0,
+      "reason": "评分0.67(概率58.0%, 预测收益1.6%), 仓位6%"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "buy",
+      "code": "300782.SZ",
+      "name": "卓胜微",
+      "shares": 300,
+      "price": 111.99,
+      "amount": 33597.0,
+      "reason": "评分0.66(概率57.3%, 预测收益1.5%), 仓位6%"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "buy",
+      "code": "600690.SH",
+      "name": "海尔智家",
+      "shares": 1500,
+      "price": 20.82,
+      "amount": 31230.0,
+      "reason": "评分0.61(概率55.4%, 预测收益1.1%), 仓位6%"
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "type": "buy",
+      "code": "605117.SH",
+      "name": "德业股份",
+      "shares": 200,
+      "price": 142.82,
+      "amount": 28564.0,
+      "reason": "评分0.61(概率55.0%, 预测收益1.0%), 仓位6%"
     }
   ],
   "daily_values": [
@@ -1626,6 +1714,24 @@
       "total_value": 986033.0,
       "pnl": -13967.0,
       "pnl_pct": -1.4
+    },
+    {
+      "date": "2026-04-21",
+      "time": "09:47",
+      "cash": 470111.0,
+      "holdings_value": 521914.0,
+      "total_value": 992025.0,
+      "pnl": -7975.0,
+      "pnl_pct": -0.8
+    },
+    {
+      "date": "2026-04-21",
+      "time": "14:35",
+      "cash": 478781.0,
+      "holdings_value": 516441.0,
+      "total_value": 995222.0,
+      "pnl": -4778.0,
+      "pnl_pct": -0.48
     }
   ]
 }
