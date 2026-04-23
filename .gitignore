@@ -44,3 +44,41 @@ Thumbs.db
 
 # 训练数据文件（太大不提交）
 *.csv
+
+# 模型文件（可重新训练）
+*.pkl
+models/
+
+# 缓存目录
+cache/
+
+# 每日报告和预测输出
+daily_report*.txt
+predictions*.csv
+predictions*.json
+*_predictions_today.json
+trading_suggestions_*.json
+trade_execution_report*.txt
+
+# 状态文件（运行时生成）
+*_status.json
+collection_progress.json
+model_log.json
+training_info.json
+training_stocks.json
+
+# 交易决策（每日生成）
+trade_decisions_*.json
+trades_today.json
+trade_decision_today.json
+trading_skip_log.json
+
+# 输出目录
+output/
+reports/
+
+# 虚拟持仓（运行时更新）
+virtual_portfolio.json
+
+# 其他临时文件
+*.xls
