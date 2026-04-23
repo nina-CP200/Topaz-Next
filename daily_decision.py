@@ -1082,6 +1082,19 @@ def main():
     watchlist_results = analysis_data["watchlist_results"]
     print(f"  完成 {len(results)} 只股票分析")
 
+    # ===== 立即发送评分排名到 Slack（绕过 Agent，降低延迟）=====
+    from send_report import send_score_ranking
+
+    slack_ok = send_score_ranking(
+        results=results,
+        market_regime=analysis_data.get("market_regime", "sideways"),
+        model_confidence=analysis_data.get("model_confidence", 0.5),
+        advance_ratio=analysis_data.get("advance_ratio", 0.5),
+    )
+    if slack_ok:
+        print("  ✓ 评分排名已通过代码直发至 Slack")
+    # ==========================================================
+
     # 生成决策
     print("🤖 生成投资决策...")
     decisions = generate_decision(results, portfolio, watchlist_results)

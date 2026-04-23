@@ -1,90 +1,60 @@
 {
   "initial_capital": 1000000,
-  "cash": 478781.0,
+  "cash": 608165.0,
   "holdings": {
     "688223.SH": {
       "name": "晶科能源",
       "shares": 11000,
       "cost": 6.69,
-      "current_price": 6.87
+      "current_price": 6.78
     },
     "605499.SH": {
       "name": "东鹏饮料",
       "shares": 100,
       "cost": 193.75,
-      "current_price": 201.46
+      "current_price": 204.37
     },
     "600438.SH": {
       "name": "通威股份",
       "shares": 3100,
       "cost": 17.62,
-      "current_price": 18.25
-    },
-    "300274.SZ": {
-      "name": "阳光电源",
-      "shares": 300,
-      "cost": 134.52,
-      "current_price": 135.92
-    },
-    "300760.SZ": {
-      "name": "迈瑞医疗",
-      "shares": 200,
-      "cost": 160.36,
-      "current_price": 158.62
+      "current_price": 18.31
     },
     "300033.SZ": {
       "name": "同花顺",
       "shares": 100,
       "cost": 239.8,
-      "current_price": 245.51
-    },
-    "600029.SH": {
-      "name": "南方航空",
-      "shares": 9600,
-      "cost": 5.72,
-      "current_price": 5.78
+      "current_price": 237.2
     },
     "000425.SZ": {
       "name": "徐工机械",
       "shares": 3400,
       "cost": 10.07,
-      "current_price": 10.1
+      "current_price": 9.81
     },
-    "002384.SZ": {
-      "name": "东山精密",
-      "shares": 300,
-      "cost": 162.59,
-      "current_price": 169.08
-    },
-    "300476.SZ": {
-      "name": "胜宏科技",
+    "688506.SH": {
+      "name": "百利天恒",
       "shares": 100,
-      "cost": 330.86,
-      "current_price": 331.25
+      "cost": 296.0,
+      "current_price": 289.24
     },
-    "300782.SZ": {
-      "name": "卓胜微",
-      "shares": 300,
-      "cost": 111.99,
-      "current_price": 112.05
+    "300308.SZ": {
+      "name": "中际旭创",
+      "shares": 100,
+      "cost": 864.86,
+      "current_price": 897.54
     },
-    "600690.SH": {
-      "name": "海尔智家",
-      "shares": 1500,
-      "cost": 20.82,
-      "current_price": 20.83
-    },
-    "605117.SH": {
-      "name": "德业股份",
-      "shares": 200,
-      "cost": 142.82,
-      "current_price": 142.81
+    "000983.SZ": {
+      "name": "山西焦煤",
+      "shares": 11000,
+      "cost": 6.43,
+      "current_price": 6.49
     }
   },
-  "holdings_value": 516441.0,
-  "total_value": 995222.0,
-  "pnl": -4778.0,
-  "pnl_pct": -0.48,
+  "holdings_value": 398920.0,
+  "total_value": 1007085.0,
+  "pnl": 7085.0,
+  "pnl_pct": 0.71,
   "start_date": "2026-03-20",
   "end_date": "2026-06-19",
   "benchmark": "沪深300",
@@ -1317,6 +1287,325 @@
       "price": 142.82,
       "amount": 28564.0,
       "reason": "评分0.61(概率55.0%, 预测收益1.0%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "sell",
+      "code": "002384.SZ",
+      "name": "东山精密",
+      "shares": 300,
+      "price": 182.71,
+      "amount": 54813.0,
+      "reason": "止盈: 盈利12.4%, 评分36.9%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "sell",
+      "code": "300476.SZ",
+      "name": "胜宏科技",
+      "shares": 100,
+      "price": 331.0,
+      "amount": 33100.0,
+      "reason": "ML建议回避(概率36.7%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "sell",
+      "code": "300782.SZ",
+      "name": "卓胜微",
+      "shares": 300,
+      "price": 115.46,
+      "amount": 34638.0,
+      "reason": "ML建议回避(概率38.9%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "sell",
+      "code": "600690.SH",
+      "name": "海尔智家",
+      "shares": 1500,
+      "price": 20.73,
+      "amount": 31095.0,
+      "reason": "ML建议回避(概率20.0%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "sell",
+      "code": "605117.SH",
+      "name": "德业股份",
+      "shares": 200,
+      "price": 145.31,
+      "amount": 29062.0,
+      "reason": "ML建议回避(概率39.8%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "688506.SH",
+      "name": "百利天恒",
+      "shares": 100,
+      "price": 296.0,
+      "amount": 29600.0,
+      "reason": "评分0.71(概率59.5%, 预测收益1.9%), 仓位8%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "300803.SZ",
+      "name": "指南针",
+      "shares": 300,
+      "price": 98.97,
+      "amount": 29691.0,
+      "reason": "评分0.70(概率59.0%, 预测收益1.8%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "002920.SZ",
+      "name": "德赛西威",
+      "shares": 300,
+      "price": 105.5,
+      "amount": 31650.0,
+      "reason": "评分0.68(概率58.5%, 预测收益1.7%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600547.SH",
+      "name": "山东黄金",
+      "shares": 900,
+      "price": 37.8,
+      "amount": 34020.0,
+      "reason": "评分0.68(概率58.3%, 预测收益1.7%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600489.SH",
+      "name": "中金黄金",
+      "shares": 1100,
+      "price": 27.26,
+      "amount": 29986.0,
+      "reason": "评分0.68(概率58.1%, 预测收益1.6%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600188.SH",
+      "name": "兖矿能源",
+      "shares": 1500,
+      "price": 19.52,
+      "amount": 29280.0,
+      "reason": "评分0.67(概率57.9%, 预测收益1.6%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "601872.SH",
+      "name": "招商轮船",
+      "shares": 1500,
+      "price": 19.09,
+      "amount": 28635.0,
+      "reason": "评分0.66(概率57.5%, 预测收益1.5%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "type": "buy",
+      "code": "600183.SH",
+      "name": "生益科技",
+      "shares": 300,
+      "price": 72.55,
+      "amount": 21765.0,
+      "reason": "评分0.65(概率57.2%, 预测收益1.4%), 仓位6%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "002920.SZ",
+      "name": "德赛西威",
+      "shares": 300,
+      "price": 106.65,
+      "amount": 31995.0,
+      "reason": "ML建议回避(概率30.7%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "300803.SZ",
+      "name": "指南针",
+      "shares": 300,
+      "price": 100.96,
+      "amount": 30287.999999999996,
+      "reason": "ML建议回避(概率32.0%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "600029.SH",
+      "name": "南方航空",
+      "shares": 9600,
+      "price": 5.72,
+      "amount": 54912.0,
+      "reason": "ML建议回避(概率32.0%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "600183.SH",
+      "name": "生益科技",
+      "shares": 300,
+      "price": 76.0,
+      "amount": 22800.0,
+      "reason": "ML建议回避(概率30.2%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "600188.SH",
+      "name": "兖矿能源",
+      "shares": 1500,
+      "price": 19.88,
+      "amount": 29820.0,
+      "reason": "ML建议回避(概率39.2%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "600489.SH",
+      "name": "中金黄金",
+      "shares": 1100,
+      "price": 27.2,
+      "amount": 29920.0,
+      "reason": "ML建议回避(概率38.2%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "sell",
+      "code": "600547.SH",
+      "name": "山东黄金",
+      "shares": 900,
+      "price": 37.25,
+      "amount": 33525.0,
+      "reason": "ML建议回避(概率33.6%)"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "buy",
+      "code": "300308.SZ",
+      "name": "中际旭创",
+      "shares": 100,
+      "price": 864.86,
+      "amount": 86486.0,
+      "reason": "评分0.95(概率69.0%, 预测收益3.8%), 仓位25%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "buy",
+      "code": "002384.SZ",
+      "name": "东山精密",
+      "shares": 600,
+      "price": 169.4,
+      "amount": 101640.0,
+      "reason": "评分0.79(概率62.8%, 预测收益2.6%), 仓位20%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "buy",
+      "code": "000983.SZ",
+      "name": "山西焦煤",
+      "shares": 11000,
+      "price": 6.43,
+      "amount": 70730.0,
+      "reason": "评分0.67(概率57.9%, 预测收益1.6%), 仓位15%"
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "type": "buy",
+      "code": "300782.SZ",
+      "name": "卓胜微",
+      "shares": 500,
+      "price": 111.74,
+      "amount": 55870.0,
+      "reason": "评分0.65(概率57.2%, 预测收益1.4%), 仓位15%"
+    },
+    {
+      "date": "2026-04-23",
+      "time": "11:53",
+      "type": "sell",
+      "code": "002384.SZ",
+      "name": "东山精密",
+      "shares": 600,
+      "price": 187.22,
+      "amount": 112332.0,
+      "reason": "止盈: 盈利10.5%, 评分61.0%"
+    },
+    {
+      "date": "2026-04-23",
+      "time": "11:53",
+      "type": "sell",
+      "code": "300274.SZ",
+      "name": "阳光电源",
+      "shares": 300,
+      "price": 132.82,
+      "amount": 39846.0,
+      "reason": "ML建议回避(概率38.6%)"
+    },
+    {
+      "date": "2026-04-23",
+      "time": "11:53",
+      "type": "sell",
+      "code": "300760.SZ",
+      "name": "迈瑞医疗",
+      "shares": 200,
+      "price": 160.23,
+      "amount": 32045.999999999996,
+      "reason": "ML建议回避(概率39.6%)"
+    },
+    {
+      "date": "2026-04-23",
+      "time": "11:53",
+      "type": "sell",
+      "code": "601872.SH",
+      "name": "招商轮船",
+      "shares": 1500,
+      "price": 17.43,
+      "amount": 26145.0,
+      "reason": "止损: 亏损-8.7% (阈值-6%)"
+    },
+    {
+      "date": "2026-04-23",
+      "time": "13:28",
+      "type": "sell",
+      "code": "300782.SZ",
+      "name": "卓胜微",
+      "shares": 500,
+      "price": 104.8,
+      "amount": 52400.0,
+      "reason": "止损: 亏损-6.2% (阈值-6%)"
     }
   ],
   "daily_values": [
@@ -1732,6 +2021,132 @@
       "total_value": 995222.0,
       "pnl": -4778.0,
       "pnl_pct": -0.48
+    },
+    {
+      "date": "2026-04-22",
+      "time": "09:47",
+      "cash": 426862.0,
+      "holdings_value": 570246.0,
+      "total_value": 997108.0,
+      "pnl": -2892.0,
+      "pnl_pct": -0.29
+    },
+    {
+      "date": "2026-04-22",
+      "time": "15:43",
+      "cash": 345396.0,
+      "holdings_value": 668075.0,
+      "total_value": 1013471.0,
+      "pnl": 13471.0,
+      "pnl_pct": 1.35
+    },
+    {
+      "date": "2026-04-23",
+      "time": "11:53",
+      "cash": 555765.0,
+      "holdings_value": 449027.0,
+      "total_value": 1004792.0,
+      "pnl": 4792.0,
+      "pnl_pct": 0.48
+    },
+    {
+      "date": "2026-04-23",
+      "time": "12:40",
+      "cash": 555765.0,
+      "holdings_value": 449027.0,
+      "total_value": 1004792.0,
+      "pnl": 4792.0,
+      "pnl_pct": 0.48
+    },
+    {
+      "date": "2026-04-23",
+      "time": "13:28",
+      "cash": 608165.0,
+      "holdings_value": 397747.0,
+      "total_value": 1005912.0,
+      "pnl": 5912.0,
+      "pnl_pct": 0.59
+    },
+    {
+      "date": "2026-04-23",
+      "time": "13:30",
+      "cash": 608165.0,
+      "holdings_value": 398397.0,
+      "total_value": 1006562.0,
+      "pnl": 6562.0,
+      "pnl_pct": 0.66
+    },
+    {
+      "date": "2026-04-23",
+      "time": "13:31",
+      "cash": 608165.0,
+      "holdings_value": 398721.0,
+      "total_value": 1006886.0,
+      "pnl": 6886.0,
+      "pnl_pct": 0.69
+    },
+    {
+      "date": "2026-04-23",
+      "time": "13:49",
+      "cash": 608165.0,
+      "holdings_value": 400744.0,
+      "total_value": 1008909.0,
+      "pnl": 8909.0,
+      "pnl_pct": 0.89
+    },
+    {
+      "date": "2026-04-23",
+      "time": "13:52",
+      "cash": 608165.0,
+      "holdings_value": 400657.0,
+      "total_value": 1008822.0,
+      "pnl": 8822.0,
+      "pnl_pct": 0.88
+    },
+    {
+      "date": "2026-04-23",
+      "time": "14:42",
+      "cash": 608165.0,
+      "holdings_value": 398833.0,
+      "total_value": 1006998.0,
+      "pnl": 6998.0,
+      "pnl_pct": 0.7
+    },
+    {
+      "date": "2026-04-23",
+      "time": "14:42",
+      "cash": 608165.0,
+      "holdings_value": 398780.0,
+      "total_value": 1006945.0,
+      "pnl": 6945.0,
+      "pnl_pct": 0.69
+    },
+    {
+      "date": "2026-04-23",
+      "time": "14:42",
+      "cash": 608165.0,
+      "holdings_value": 398864.0,
+      "total_value": 1007029.0,
+      "pnl": 7029.0,
+      "pnl_pct": 0.7
+    },
+    {
+      "date": "2026-04-23",
+      "time": "14:42",
+      "cash": 608165.0,
+      "holdings_value": 398992.0,
+      "total_value": 1007157.0,
+      "pnl": 7157.0,
+      "pnl_pct": 0.72
+    },
+    {
+      "date": "2026-04-23",
+      "time": "14:43",
+      "cash": 608165.0,
+      "holdings_value": 398920.0,
+      "total_value": 1007085.0,
+      "pnl": 7085.0,
+      "pnl_pct": 0.71
     }
   ]
 }
