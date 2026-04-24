@@ -437,7 +437,7 @@ def main():
     performance = trainer.train(df)
     
     # 保存最新模型
-    output_path = os.path.join(base_dir, 'ensemble_model_csi300_latest.pkl')
+    output_path = os.path.join(base_dir, 'ensemble_model.pkl')
     trainer.save_latest_model(output_path)
     
     print("\n" + "="*60)

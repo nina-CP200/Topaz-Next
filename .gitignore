@@ -67,18 +67,33 @@ model_log.json
 training_info.json
 training_stocks.json
 
-# 交易决策（每日生成）
+# 交易决策（每日生成）- 已删除交易功能
 trade_decisions_*.json
 trades_today.json
 trade_decision_today.json
 trading_skip_log.json
+trading_suggestions_*.json
+trade_execution_report*.txt
+trade_*.sh
+trading_utils.py
 
 # 输出目录
 output/
 reports/
 
-# 虚拟持仓（运行时更新）
+# 虚拟持仓（已删除交易功能）
 virtual_portfolio.json
+
+# 美股相关（已删除美股功能）
+us_*.pkl
+us_*.json
+美股关注股票列表.md
 
 # 其他临时文件
 *.xls
+
+# 多余的关注列表和股票列表
+A股关注股票列表.md
+csi300_stock_list.csv
+csi300_stock_list.md
+csi300_components.xls

@@ -1,152 +1,229 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
-获取沪深300完整历史数据（2020年至今）
-使用东方财富接口支持更长历史
+沪深300完整历史数据获取模块
+使用腾讯财经和新浪财经API（免费、稳定）
+
+数据源：
+  - 主源：腾讯财经（支持长历史）
+  - 备源：新浪财经
+
+使用示例：
+  python fetch_full_history.py
+  python fetch_full_history.py --limit 10  # 测试模式
 """
 
 import pandas as pd
-import numpy as np
 import requests
 import time
-from datetime import datetime
+import json
 import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from utils import parse_stock_list
-from feature_engineer import FeatureEngineer
+from utils import load_stock_list_from_json
 
 
-def get_eastmoney_history(symbol: str, start_date: str = '20200101') -> pd.DataFrame:
+def get_tencent_history(symbol: str, days: int = 500) -> pd.DataFrame:
     """
-    从东方财富获取A股历史数据（支持更长历史）
+    从腾讯财经获取A股历史K线数据
     
-    Args:
-        symbol: 股票代码（如 000001.SZ）
-        start_date: 开始日期
+    接口地址：
+https://web.ifzq.gtimg.cn/appstock/app/fqkline/get
     
-    Returns:
-        DataFrame
+    参数：
+        symbol: 股票代码（如 000001.SZ, 600000.SH）
+        days: 获取天数（默认500天，约2年）
+    
+    返回：
+        DataFrame 或 None
     """
-    # 确定市场代码
-    if symbol.endswith('.SH'):
-        secid = '1.' + symbol.replace('.SH', '')
-    elif symbol.endswith('.SZ'):
-        secid = '0.' + symbol.replace('.SZ', '')
-    else:
-        secid = '1.' + symbol if symbol.startswith('6') else '0.' + symbol
-    
-    url = 'http://push2his.eastmoney.com/api/qt/stock/kline/get'
-    params = {
-        'secid': secid,
-        'fields1': 'f1,f2,f3,f4,f5,f6',
-        'fields2': 'f51,f52,f53,f54,f55,f56,f57',
-        'klt': '101',
-        'fqt': '1',
-        'beg': start_date,
-        'end': '20301231',
-    }
-    
-    headers = {'User-Agent': 'Mozilla/5.0'}
-    
-    response = requests.get(url, params=params, headers=headers, timeout=15)
-    data = response.json()
-    
-    if data.get('data') and data['data'].get('klines'):
-        klines = data['data']['klines']
-        records = []
-        for item in klines:
-            parts = item.split(',')
-            if len(parts) >= 6:
-                records.append({
-                    'date': parts[0],
-                    'open': float(parts[1]),
-                    'close': float(parts[2]),
-                    'high': float(parts[3]),
-                    'low': float(parts[4]),
-                    'volume': float(parts[5]),
-                    'code': symbol
-                })
+    try:
+        # 代码格式转换
+        if symbol.endswith('.SH'):
+            api_symbol = 'sh' + symbol.replace('.SH', '')
+        elif symbol.endswith('.SZ'):
+            api_symbol = 'sz' + symbol.replace('.SZ', '')
+        else:
+            api_symbol = 'sh' + symbol if symbol.startswith('6') else 'sz' + symbol
         
-        df = pd.DataFrame(records)
-        df['date'] = pd.to_datetime(df['date'])
-        return df
-    
-    return None
+        # 腾讯财经K线接口（前复权）
+        url = f'https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={api_symbol},day,,,{days},qfq'
+        
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://stock.finance.qq.com/'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=15)
+        data = response.json()
+        
+        if data.get('data') and data['data'].get(api_symbol):
+            stock_data = data['data'][api_symbol]
+            klines = stock_data.get('qfqday', stock_data.get('day', []))
+            
+            if klines:
+                records = []
+                for item in klines:
+                    # 格式: [日期, 开盘, 收盘, 最低, 最高, 成交量]
+                    if len(item) >= 6:
+                        records.append({
+                            'date': item[0],
+                            'open': float(item[1]),
+                            'close': float(item[2]),
+                            'low': float(item[3]),
+                            'high': float(item[4]),
+                            'volume': float(item[5]),
+                            'code': symbol
+                        })
+                
+                df = pd.DataFrame(records)
+                return df
+        
+        return None
+    except Exception as e:
+        print(f"  腾讯获取失败: {e}")
+        return None
 
 
-def fetch_csi300_full_history(start_year: int = 2020, output_file: str = 'csi300_full_history.csv', limit: int = None):
+def get_sina_history(symbol: str) -> pd.DataFrame:
     """
-    获取沪深300完整历史数据
+    从新浪财经获取A股历史K线数据（备用）
     
-    Args:
-        start_year: 开始年份
-        output_file: 输出文件
-        limit: 限制股票数量（用于测试）
+    接口地址：
+https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData
+    
+    返回：
+        DataFrame 或 None
+    """
+    try:
+        # 代码格式转换
+        if symbol.endswith('.SH'):
+            api_symbol = 'sh' + symbol.replace('.SH', '')
+        elif symbol.endswith('.SZ'):
+            api_symbol = 'sz' + symbol.replace('.SZ', '')
+        else:
+            api_symbol = 'sh' + symbol if symbol.startswith('6') else 'sz' + symbol
+        
+        # 新浪财经K线接口
+        url = f"https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={api_symbol}&scale=240&ma=5&mab=10"
+        
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=15)
+        data = response.json()
+        
+        if data and isinstance(data, list):
+            records = []
+            for item in data:
+                if 'day' in item:
+                    records.append({
+                        'date': item['day'],
+                        'open': float(item['open']),
+                        'close': float(item['close']),
+                        'low': float(item['low']),
+                        'high': float(item['high']),
+                        'volume': float(item['volume']),
+                        'code': symbol
+                    })
+            
+            if records:
+                return pd.DataFrame(records)
+        
+        return None
+    except Exception as e:
+        print(f"  新浪获取失败: {e}")
+        return None
+
+
+def fetch_csi300_full_history(output_file: str = 'csi300_full_history.csv', limit: int = None, stock_list_file: str = None):
+    """
+    获取沪深300成分股完整历史数据
+    
+    流程：
+        1. 加载股票列表
+        2. 腾讯API获取数据（主源）
+        3. 新浪API获取数据（备源）
+        4. 合并保存
+    
+    参数：
+        output_file: 输出文件名
+        limit: 限制股票数量（测试用）
+        stock_list_file: 股票列表文件路径
     """
     print("=" * 60)
-    print("获取沪深300完整历史数据（东方财富接口）")
+    print("获取沪深300完整历史数据")
     print("=" * 60)
+    print("数据源: 腾讯财经（主） + 新浪财经（备）")
     
-    stock_list_file = 'csi300_stock_list.csv'
-    stocks = parse_stock_list(stock_list_file)
+    # 加载股票列表
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    if stock_list_file is None:
+        stock_list_file = os.path.join(base_dir, 'csi300_stocks.json')
+    
+    stocks = load_stock_list_from_json(stock_list_file)
     
     if limit:
         stocks = stocks[:limit]
     
     print(f"股票数量: {len(stocks)}")
     
-    start_date = f"{start_year}0101"
     all_data = []
     failed_stocks = []
     
     for i, (symbol, name, category) in enumerate(stocks):
         print(f"\n[{i+1}/{len(stocks)}] {symbol} {name}")
         
-        try:
-            df = get_eastmoney_history(symbol, start_date)
-            
-            if df is not None and len(df) > 0:
-                df['name'] = name
-                all_data.append(df)
-                print(f"  ✓ {len(df)} 条 ({df['date'].min().strftime('%Y-%m-%d')} ~ {df['date'].max().strftime('%Y-%m-%d')})")
-            else:
-                print(f"  ✗ 获取失败")
-                failed_stocks.append(symbol)
-            
-            time.sleep(0.2)
-            
-        except Exception as e:
-            print(f"  ✗ 错误: {e}")
+        # 尝试腾讯API
+        df = get_tencent_history(symbol, days=500)
+        
+        # 如果腾讯失败，尝试新浪
+        if df is None:
+            print("  腾讯失败，尝试新浪...")
+            df = get_sina_history(symbol)
+        
+        if df is not None and len(df) > 0:
+            df['name'] = name
+            all_data.append(df)
+            print(f"  ✓ 获取 {len(df)} 条数据")
+            print(f"    时间: {df['date'].min()} ~ {df['date'].max()}")
+        else:
             failed_stocks.append(symbol)
-            continue
+            print(f"  ✗ 获取失败")
+        
+        # 请求间隔（避免限流）
+        time.sleep(0.5)
     
-    print(f"\n成功获取: {len(all_data)} 只股票")
+    # 统计结果
+    print("\n" + "=" * 60)
+    print(f"成功获取: {len(all_data)} 只股票")
     print(f"失败股票: {len(failed_stocks)} 只")
     
     if all_data:
+        # 合并数据
         df_all = pd.concat(all_data, ignore_index=True)
         df_all = df_all.sort_values(['code', 'date']).reset_index(drop=True)
         
-        print(f"\n合并数据: {len(df_all)} 条, {df_all['code'].nunique()} 只股票")
+        print(f"\n合并数据: {len(df_all)} 条")
         print(f"时间范围: {df_all['date'].min()} ~ {df_all['date'].max()}")
         
+        # 保存
         df_all.to_csv(output_file, index=False)
-        print(f"原始数据保存: {output_file}")
+        print(f"\n✓ 数据保存: {output_file}")
         
         return df_all
-    
-    return None
+    else:
+        print("\n✗ 未获取到任何数据")
+        return None
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description='获取沪深300完整历史数据')
-    parser.add_argument('--start-year', type=int, default=2020, help='开始年份')
-    parser.add_argument('--output', type=str, default='csi300_full_history.csv', help='输出文件')
+    
+    parser = argparse.ArgumentParser(description='获取沪深300历史数据')
+    parser.add_argument('--output', default='csi300_full_history.csv', help='输出文件名')
     parser.add_argument('--limit', type=int, default=None, help='限制股票数量（测试用）')
     
     args = parser.parse_args()
     
-    fetch_csi300_full_history(args.start_year, args.output, args.limit)
+    fetch_csi300_full_history(args.output, args.limit)

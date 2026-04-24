@@ -1,8 +1,37 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+================================================================================
 QuantPilot - 训练数据收集器
-收集沪深300成分股历史数据，用于机器学习训练
+================================================================================
+
+模块说明：
+    本模块用于收集沪深300成分股的历史行情数据，并计算技术指标和大盘因子，
+    生成用于机器学习模型训练的特征数据集。
+
+数据收集流程：
+    1. 加载沪深300成分股列表和行业映射
+    2. 收集沪深300指数历史数据（用于计算大盘因子）
+    3. 遍历每只成分股：
+       a. 获取历史K线数据（开高低收量）
+       b. 计算技术指标（MA、RSI、MACD、KDJ、布林带等）
+       c. 合并大盘因子（指数收益、相对强度、Beta等）
+    4. 保存合并后的数据到CSV文件
+    5. 支持断点续传，每10只股票保存一次进度
+
+输出文件说明：
+    - training_data.csv: 训练数据集，包含技术指标和大盘因子
+    - collection_progress.json: 收集进度文件，用于断点恢复
+
+注意事项：
+    1. API限流处理：遇到限流时自动休眠1小时后继续
+    2. 数据完整性：每只股票至少需要60天数据才会被纳入数据集
+    3. 内存管理：数据量大时定期保存，避免内存溢出
+    4. 网络超时：请求超时设置为15秒，失败股票会记录到failed列表
+    5. 断点续传：可通过 --no-resume 参数禁用，默认启用
+
+作者：QuantPilot Team
+版本：1.0.0
 """
 
 import os
@@ -21,9 +50,33 @@ from quantpilot_data_api import get_history_data, get_stock_data
 
 
 class TrainingDataCollector:
-    """训练数据收集器"""
+    """
+    训练数据收集器
+    
+    功能：
+        - 收集沪深300成分股历史数据
+        - 计算技术指标和大盘因子
+        - 支持断点续传
+    """
     
     def __init__(self, data_dir: str = None):
+        """
+        初始化数据收集器
+        
+        参数：
+            data_dir: 数据目录路径，默认为当前脚本所在目录
+                     该目录需包含以下文件：
+                     - csi300_stocks.json: 成分股列表
+                     - csi300_industry_map.json: 行业映射表
+        
+        属性说明：
+            stocks: 成分股列表，格式为 [{'code': '000001', 'name': '平安银行'}, ...]
+            stock_industry: 股票-行业映射，格式为 {'000001': '银行', ...}
+            collected: 已成功收集的股票数量
+            failed: 收集失败的股票代码列表
+            rate_limited: 是否触发了API限流
+            index_data: 沪深300指数历史数据DataFrame
+        """
         self.data_dir = data_dir or os.path.dirname(os.path.abspath(__file__))
         self.stocks = []
         self.stock_industry = {}
@@ -31,13 +84,34 @@ class TrainingDataCollector:
         self.failed = []
         self.rate_limited = False
         self.session_start = None
-        self.index_data = None  # 沪深300指数数据
+        self.index_data = None
         
-        # 加载股票列表
         self._load_stock_list()
     
     def _load_stock_list(self):
-        """加载成分股列表"""
+        """
+        加载成分股列表和行业映射
+        
+        文件格式：
+            csi300_stocks.json:
+                [
+                    {"code": "000001", "name": "平安银行"},
+                    {"code": "000002", "name": "万科A"},
+                    ...
+                ]
+            
+            csi300_industry_map.json:
+                {
+                    "stock_industry": {
+                        "000001": "银行",
+                        "000002": "房地产",
+                        ...
+                    }
+                }
+        
+        异常处理：
+            文件不存在时不会报错，stocks和stock_industry将保持为空
+        """
         stocks_file = os.path.join(self.data_dir, "csi300_stocks.json")
         if os.path.exists(stocks_file):
             with open(stocks_file, 'r', encoding='utf-8') as f:
@@ -52,11 +126,31 @@ class TrainingDataCollector:
         print(f"加载 {len(self.stocks)} 只成分股，{len(self.stock_industry)} 只有行业映射")
     
     def collect_index_data(self, days: int = 500) -> Optional[pd.DataFrame]:
-        """收集沪深300指数历史数据"""
+        """
+        收集沪深300指数历史数据
+        
+        参数：
+            days: 获取最近N个交易日的数据，默认500天
+        
+        返回：
+            DataFrame或None，包含以下列：
+                - date: 交易日期
+                - open: 开盘价
+                - high: 最高价
+                - low: 最低价
+                - close: 收盘价
+                - volume: 成交量
+        
+        数据源：
+            新浪财经API: https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData
+        
+        注意：
+            该数据用于计算大盘因子，如指数收益率、相对强度、Beta等
+        """
         print("\n收集沪深300指数数据...")
         try:
             index_code = '000300'  # 沪深300
-            url = f"http://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
+            url = f"https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData"
             params = {
                 "symbol": f"sh{index_code}",
                 "scale": 240,  # 日线
@@ -92,8 +186,52 @@ class TrainingDataCollector:
             return None
     
     def calculate_technical_indicators(self, df: pd.DataFrame) -> pd.DataFrame:
-        """计算技术指标"""
-        # 确保日期列存在并正确格式化
+        """
+        计算技术指标
+        
+        参数：
+            df: 股票历史数据DataFrame，必须包含以下列：
+                - date: 交易日期
+                - open: 开盘价
+                - high: 最高价
+                - low: 最低价
+                - close: 收盘价
+                - volume: 成交量
+        
+        返回：
+            添加技术指标后的DataFrame，新增以下指标：
+            
+            移动平均线类：
+                - ma5, ma10, ma20, ma60: 5/10/20/60日均线
+                - ma5_slope, ma10_slope, ma20_slope: 均线斜率（5日变化率）
+                - price_to_ma5/10/20: 价格相对均线的位置（偏离度）
+            
+            波动率类：
+                - volatility_5/10/20: 5/10/20日滚动波动率
+            
+            成交量类：
+                - volume_ma5, volume_ma10: 成交量均线
+                - volume_ratio: 量比（当日成交量/5日均量）
+            
+            动量类：
+                - return_1d/5d/10d/20d: 1/5/10/20日收益率
+            
+            技术指标：
+                - rsi: 14日RSI指标
+                - macd, macd_signal, macd_hist: MACD指标及信号线
+                - bb_upper, bb_lower, bb_middle, bb_position: 布林带及位置
+                - kdj_k, kdj_d: KDJ指标
+            
+            大盘因子（需先调用collect_index_data）：
+                - index_close, index_return_1d/5d/20d: 指数收盘价及收益率
+                - index_ma_position: 指数相对20日均线位置
+                - index_volatility: 指数波动率
+                - relative_strength_1d/5d/20d: 个股相对指数的超额收益
+                - beta: 个股Beta系数
+        
+        注意：
+            前60行数据因窗口期不足，部分指标为NaN，训练时需处理
+        """
         if 'date' not in df.columns:
             if df.index.name == 'datetime' or hasattr(df.index, 'name'):
                 df['date'] = df.index
@@ -169,7 +307,28 @@ class TrainingDataCollector:
         return df
     
     def _add_index_factors(self, df: pd.DataFrame) -> pd.DataFrame:
-        """添加大盘因子"""
+        """
+        添加大盘因子（私有方法）
+        
+        参数：
+            df: 股票数据DataFrame，需包含date列和return列
+        
+        返回：
+            合并大盘因子后的DataFrame，新增列：
+                - index_close: 沪深300收盘价
+                - index_return_1d/5d/20d: 指数收益率
+                - index_ma_position: 指数相对20日均线位置
+                - index_volatility: 指数20日波动率
+                - relative_strength_1d/5d/20d: 个股相对指数的超额收益
+                - beta: 个股Beta系数（20日滚动协方差计算）
+        
+        计算方法：
+            - Beta = Cov(个股收益, 指数收益) / Var(指数收益)
+            - 相对强度 = 个股收益 - 指数收益
+        
+        前置条件：
+            需要先调用collect_index_data()获取指数数据
+        """
         try:
             # 确保日期格式一致
             df['date'] = pd.to_datetime(df['date'])
@@ -209,7 +368,25 @@ class TrainingDataCollector:
         return df
     
     def collect_stock_data(self, code: str, days: int = 500) -> Optional[pd.DataFrame]:
-        """收集单只股票的历史数据"""
+        """
+        收集单只股票的历史数据
+        
+        参数：
+            code: 股票代码，格式如 '000001'、'600000'
+            days: 获取最近N个交易日的数据，默认500天
+        
+        返回：
+            DataFrame或None（获取失败时返回None）
+            DataFrame包含原始K线数据和技术指标，详见calculate_technical_indicators()
+        
+        数据验证：
+            - 数据少于60天的股票将被过滤（窗口期不足）
+            - API限流时会设置self.rate_limited=True
+        
+        异常处理：
+            - 遇到rate/limit/429关键词时识别为限流
+            - 其他异常记录失败但不中断程序
+        """
         try:
             df = get_history_data(code, days=days)
             if df is None or len(df) < 60:
@@ -239,8 +416,36 @@ class TrainingDataCollector:
                     output_file: str = "training_data.csv",
                     progress_file: str = "collection_progress.json",
                     resume: bool = True):
-        """收集所有股票数据"""
+        """
+        收集所有股票数据（主入口函数）
         
+        参数：
+            max_stocks: 最大收集股票数量，默认300（沪深300全部）
+            days: 每只股票获取的历史数据天数，默认500天
+            output_file: 输出CSV文件名，默认'training_data.csv'
+            progress_file: 进度文件名，默认'collection_progress.json'
+            resume: 是否启用断点续传，默认True
+        
+        断点续传机制：
+            - 读取progress_file获取上次中断位置
+            - 从上次成功的索引继续收集
+            - 加载已存在的output_file数据
+        
+        限流处理：
+            - 检测到API限流时休眠1小时
+            - 休眠前保存当前进度
+        
+        检查点机制：
+            - 每收集10只股票保存一次数据和进度
+            - 防止程序崩溃导致数据丢失
+        
+        返回：
+            所有股票数据的DataFrame列表
+        
+        注意：
+            - 调用前确保已准备好csi300_stocks.json和csi300_industry_map.json
+            - 数据量大时建议使用resume=True
+        """
         print("\n" + "="*60)
         print("训练数据收集器")
         print("="*60)
@@ -332,7 +537,56 @@ class TrainingDataCollector:
         return all_data
     
     def _save_data(self, all_data: list, output_path: str):
-        """保存数据到CSV"""
+        """
+        保存数据到CSV文件（私有方法）
+        
+        参数：
+            all_data: DataFrame列表，每个DataFrame为一只股票的数据
+            output_path: 输出文件完整路径
+        
+        输出格式（CSV列说明）：
+            基础信息：
+                - date: 交易日期
+                - code: 股票代码
+                - industry: 所属行业
+            
+            价格数据：
+                - open, high, low, close: 开高低收
+                - volume: 成交量
+            
+            移动平均线：
+                - ma5, ma10, ma20, ma60: 均线值
+                - ma5_slope, ma10_slope, ma20_slope: 均线斜率
+                - price_to_ma5, price_to_ma10, price_to_ma20: 价格偏离度
+            
+            波动率：
+                - volatility_5, volatility_10, volatility_20: 滚动波动率
+            
+            成交量：
+                - volume_ma5: 5日均量
+                - volume_ratio: 量比
+            
+            收益率：
+                - return_1d, return_5d, return_10d, return_20d: 滚动收益率
+            
+            技术指标：
+                - rsi: RSI指标
+                - macd, macd_signal, macd_hist: MACD指标
+                - bb_position: 布林带位置
+                - kdj_k, kdj_d: KDJ指标
+            
+            大盘因子：
+                - index_close: 指数收盘价
+                - index_return_1d/5d/20d: 指数收益率
+                - index_ma_position: 指数均线位置
+                - index_volatility: 指数波动率
+                - relative_strength_1d/5d/20d: 相对强度
+                - beta: Beta系数
+        
+        注意：
+            - 只保存存在的列，避免因缺失列导致错误
+            - 不保存索引列
+        """
         if not all_data:
             return
         
@@ -362,7 +616,27 @@ class TrainingDataCollector:
         combined[save_cols].to_csv(output_path, index=False)
     
     def _save_progress(self, progress_file: str, last_idx: int, done: bool = False):
-        """保存收集进度"""
+        """
+        保存收集进度（私有方法）
+        
+        参数：
+            progress_file: 进度文件名
+            last_idx: 上次处理到的股票索引
+            done: 是否已完成全部收集
+        
+        进度文件格式（JSON）：
+            {
+                "last_idx": 150,          // 上次处理到的索引
+                "collected": 148,         // 已成功收集数量
+                "failed": ["000001"],     // 失败的股票代码列表
+                "last_update": "2024-01-15T10:30:00",  // 最后更新时间
+                "done": false             // 是否全部完成
+            }
+        
+        用途：
+            - 支持断点续传，程序崩溃后可从上次位置继续
+            - 记录失败的股票代码，便于后续重试
+        """
         progress = {
             'last_idx': last_idx,
             'collected': self.collected,
@@ -375,7 +649,28 @@ class TrainingDataCollector:
 
 
 def main():
-    """主函数"""
+    """
+    主函数 - 命令行入口
+    
+    命令行参数：
+        --max: 最大收集股票数量，默认300
+        --days: 历史数据天数，默认500
+        --output: 输出文件名，默认training_data.csv
+        --no-resume: 禁用断点续传，从头开始收集
+    
+    使用示例：
+        # 收集全部300只股票，500天数据
+        python collect_training_data.py
+        
+        # 收集前50只股票
+        python collect_training_data.py --max 50
+        
+        # 收集100天数据，输出到指定文件
+        python collect_training_data.py --days 100 --output my_data.csv
+        
+        # 从头开始收集（忽略进度文件）
+        python collect_training_data.py --no-resume
+    """
     import argparse
     parser = argparse.ArgumentParser(description='训练数据收集')
     parser.add_argument('--max', type=int, default=300, help='最大收集股票数量')

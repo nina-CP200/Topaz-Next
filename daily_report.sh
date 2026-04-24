@@ -28,6 +28,6 @@ echo "========================================" >> $LOG_FILE
 echo "$(date): [生成报告] A 股 ML 分析报告" >> $LOG_FILE
 
 # 运行 ML 分析
-/home/emmmoji/myenv/bin/python ml_stock_analysis_ensemble.py --cn >> $LOG_FILE 2>&1
+python3 ml_stock_analysis_ensemble.py --limit 50 >> $LOG_FILE 2>&1
 
 echo "$(date): [报告完成] A 股 ML 分析完成" >> $LOG_FILE
