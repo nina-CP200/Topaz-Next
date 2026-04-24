@@ -92,6 +92,9 @@ us_*.json
 # 其他临时文件
 *.xls
 
+# 分析结果（运行时生成）
+latest_analysis_results.json
+
 # 多余的关注列表和股票列表
 A股关注股票列表.md
 csi300_stock_list.csv
