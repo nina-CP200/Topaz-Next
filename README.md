@@ -55,20 +55,20 @@ vim .env
 配置内容：
 ```
 SLACK_BOT_TOKEN=xoxb-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
-SLACK_CHANNEL=#investments
+SLACK_CHANNEL=xxxxxxx
 ```
 
 配置内容：
 ```
 # Slack Bot Token（可选，用于推送报告）
 SLACK_BOT_TOKEN=xoxb-xxxxxxxxxx-xxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
-SLACK_CHANNEL=#investments
+SLACK_CHANNEL=xxxxxxx
 ```
 
 ### 运行分析
 
 ```bash
-# 每日分析（首次运行会自动获取历史数据并训练模型）
+# 分析（首次运行会自动获取历史数据并训练模型）
 python3 -m src.analysis.daily
 
 # 使用沪深300分组模型
