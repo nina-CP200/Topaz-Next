@@ -117,12 +117,10 @@ def check_and_activate_venv():
 
 
 check_and_activate_venv()
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from quantpilot_data_api import get_stock_data, get_history_data
-from utils import load_stock_list_from_json
-from ensemble_model import EnsembleModel
-from feature_engineer import FeatureEngineer
+from src.data.api import get_stock_data, get_history_data
+from src.utils.utils import load_stock_list_from_json
+from src.models.ensemble import EnsembleModel
+from src.features.engineer import FeatureEngineer
 
 
 def create_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -285,7 +283,7 @@ class MLStockAnalyzer:
         # 加载预训练模型
         print("🤖 加载预训练集成模型...")
         self.predictor = EnsembleModel(
-            model_dir=os.path.dirname(os.path.abspath(__file__))
+            model_dir="data/models"
         )
         self.feature_engineer = FeatureEngineer()
 
@@ -751,7 +749,7 @@ def main(batch=0, limit=0):
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     # 使用沪深300股票列表
-    a_stocks_file = os.path.join(base_dir, "csi300_stocks.json")
+    a_stocks_file = "config/csi300_stocks.json"
 
     print("📊 分析 A 股市场")
 

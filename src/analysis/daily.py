@@ -78,16 +78,12 @@ from typing import Dict, List
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# 将当前目录添加到 Python 路径，确保可以导入本地模块
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-# 导入本地模块
-from ensemble_model import EnsembleModel
-from feature_engineer import FeatureEngineer
-from quantpilot_data_api import get_history_data, get_stock_data
-from utils import load_stock_list_from_json
-from cache_manager import CacheManager
-from market_data import (
+from src.models.ensemble import EnsembleModel
+from src.features.engineer import FeatureEngineer
+from src.data.api import get_history_data, get_stock_data
+from src.utils.utils import load_stock_list_from_json
+from src.data.cache import CacheManager
+from src.data.market import (
     get_index_data,
     get_index_history,
     get_market_sentiment,
@@ -241,8 +237,8 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict
     if use_csi300_model:
         # 使用分组模型：根据当前市场环境选择对应训练好的模型
         # 这种方式可以提高预测精度，因为不同市场环境下股票表现规律不同
-        if os.path.exists("ensemble_model_regime_based.pkl"):
-            model_data = joblib.load("ensemble_model_regime_based.pkl")
+        if os.path.exists("data/models/ensemble_model_regime_based.pkl"):
+            model_data = joblib.load("data/models/ensemble_model_regime_based.pkl")
             models_by_regime = model_data.get("models_by_regime", {})
             
             # 尝试加载当前市场环境对应的模型
@@ -265,8 +261,8 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict
             return {"all_results": [], "market_regime": detailed_regime}
     else:
         # 使用默认单一模型：适用于通用场景
-        if os.path.exists("ensemble_model.pkl"):
-            model_data = joblib.load("ensemble_model.pkl")
+        if os.path.exists("data/models/ensemble_model.pkl"):
+            model_data = joblib.load("data/models/ensemble_model.pkl")
             
             # 处理两种模型格式
             if "scaler" in model_data:
@@ -280,14 +276,14 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict
                 # 兼容旧格式：scaler 在单独文件
                 ensemble = {
                     "model": model_data.get("models", {}).get("lightgbm", model_data.get("model")),
-                    "scaler": joblib.load("ensemble_scaler.pkl") if os.path.exists("ensemble_scaler.pkl") else None,
+                    "scaler": joblib.load("data/models/ensemble_scaler.pkl") if os.path.exists("data/models/ensemble_scaler.pkl") else None,
                     "feature_cols": model_data["feature_cols"],
                 }
                 if ensemble["scaler"] is None:
                     from sklearn.preprocessing import StandardScaler
                     ensemble["scaler"] = StandardScaler()
             
-            print(f"📦 已加载默认 ensemble_model.pkl")
+            print(f"📦 已加载默认 data/models/ensemble_model.pkl")
         else:
             print("⚠️ 未找到默认模型")
             return {"all_results": [], "market_regime": detailed_regime}
@@ -621,8 +617,7 @@ def main():
     args = parser.parse_args()
 
     # 定位股票列表文件路径
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    stock_list_file = os.path.join(base_dir, "csi300_stocks.json")
+    stock_list_file = "config/csi300_stocks.json"
     
     # 检查股票列表文件是否存在
     if not os.path.exists(stock_list_file):
@@ -638,7 +633,7 @@ def main():
 
     # 尝试发送报告到 Slack（可选功能）
     try:
-        from send_report import send_score_ranking
+        from src.reports.sender import send_score_ranking
         slack_ok = send_score_ranking(
             results=results,
             market_regime=analysis_data.get("market_regime", "sideways"),
@@ -660,7 +655,7 @@ def main():
         for i, r in enumerate(sorted_results):
             r["rank"] = i + 1
         
-        output_file = os.path.join(base_dir, "latest_analysis_results.json")
+        output_file = "data/raw/latest_analysis_results.json"
         output_data = {
             "date": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "market_regime": analysis_data.get("market_regime", "sideways"),

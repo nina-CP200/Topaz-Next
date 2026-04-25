@@ -29,13 +29,11 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import warnings
 warnings.filterwarnings('ignore')
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from quantpilot_data_api import get_qq_history
-from feature_engineer import FeatureEngineer
-from market_data import get_index_history
-from ensemble_model import EnsembleModel
-from feature_validator import validate_features, fix_features, check_feature_distribution, print_feature_stats, validate_model_predictions
+from src.data.api import get_qq_history
+from src.features.engineer import FeatureEngineer
+from src.data.market import get_index_history
+from src.models.ensemble import EnsembleModel
+from src.features.validator import validate_features, fix_features, check_feature_distribution, print_feature_stats, validate_model_predictions
 
 
 def fetch_stock_data(symbol, days=500):
@@ -57,7 +55,7 @@ def fetch_all_data(max_workers=8):
 
     # 加载股票列表
     import json
-    with open('csi300_stocks.json', 'r', encoding='utf-8') as f:
+    with open('config/csi300_stocks.json', 'r', encoding='utf-8') as f:
         stocks = json.load(f)
 
     print(f"\n  股票总数: {len(stocks)}")
@@ -97,7 +95,7 @@ def fetch_all_data(max_workers=8):
     print(f"  日期范围: {combined['date'].min()} 到 {combined['date'].max()}")
 
     # 保存原始数据
-    output_file = 'csi300_full_history.csv'
+    output_file = 'data/raw/csi300_full_history.csv'
     combined.to_csv(output_file, index=False)
     print(f"  ✓ 数据已保存: {output_file}")
 
@@ -227,7 +225,7 @@ def train_model(df, feature_cols):
 
     # 创建和训练模型
     print("\n  训练集成模型...")
-    model = EnsembleModel(model_dir='.')
+    model = EnsembleModel(model_dir='data/models')
 
     success = model.train(
         df=df_clean,
@@ -273,7 +271,7 @@ def validate_and_save(model, df, feature_cols):
         print(f"    ⚠️ {message}")
 
     # 保存模型
-    print("\n  模型已保存至 ensemble_model.pkl")
+    print("\n  模型已保存至 data/models/ensemble_model.pkl")
 
     # 保存训练信息
     training_info = {
@@ -285,7 +283,7 @@ def validate_and_save(model, df, feature_cols):
     }
 
     import json
-    with open('training_info.json', 'w') as f:
+    with open('data/raw/training_info.json', 'w') as f:
         json.dump(training_info, f, indent=2)
     print("    ✓ 训练信息已保存")
 

@@ -42,15 +42,17 @@ Thumbs.db
 # 日志
 *.log
 
-# 训练数据文件（太大不提交）
-*.csv
+# 数据目录（运行时生成）
+data/
+data/cache/
+data/models/
+data/raw/
 
 # 模型文件（可重新训练）
 *.pkl
-models/
 
-# 缓存目录
-cache/
+# 训练数据文件（太大不提交）
+data/raw/*.csv
 
 # 每日报告和预测输出
 daily_report*.txt
@@ -64,7 +66,7 @@ trade_execution_report*.txt
 *_status.json
 collection_progress.json
 model_log.json
-training_info.json
+data/raw/training_info.json
 training_stocks.json
 
 # 交易决策（每日生成）- 已删除交易功能
@@ -93,7 +95,7 @@ us_*.json
 *.xls
 
 # 分析结果（运行时生成）
-latest_analysis_results.json
+data/raw/latest_analysis_results.json
 
 # 多余的关注列表和股票列表
 A股关注股票列表.md

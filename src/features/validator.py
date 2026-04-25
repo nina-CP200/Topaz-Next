@@ -12,7 +12,7 @@
 4. check_feature_distribution: 检查特征分布统计
 
 使用示例:
-    from feature_validator import validate_features, fix_features
+    from src.features.validator import validate_features, fix_features
 
     # 验证特征
     is_valid, issues = validate_features(df)
@@ -265,9 +265,9 @@ if __name__ == "__main__":
     print("特征验证工具")
     print("=" * 80)
     print("用法：")
-    print("  from feature_validator import validate_features, fix_features")
-    print("  from feature_validator import normalize_volume_features")
-    print("  from feature_validator import check_feature_distribution, print_feature_stats")
+    print("  from src.features.validator import validate_features, fix_features")
+    print("  from src.features.validator import normalize_volume_features")
+    print("  from src.features.validator import check_feature_distribution, print_feature_stats")
     print()
     print("  # 验证和修复特征")
     print("  is_valid, issues = validate_features(df)")

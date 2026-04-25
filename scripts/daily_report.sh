@@ -3,9 +3,10 @@
 # 每个交易日 9:45 运行
 
 SCRIPT_DIR=$(dirname "$0")
-cd "$SCRIPT_DIR"
+PROJECT_DIR="$SCRIPT_DIR/.."
+cd "$PROJECT_DIR"
 
-LOG_FILE="$SCRIPT_DIR/../topaz_report.log"
+LOG_FILE="$PROJECT_DIR/topaz_report.log"
 
 # 检查是否是交易日（周末跳过）
 WEEKDAY=$(date +%w)
@@ -28,6 +29,6 @@ echo "========================================" >> $LOG_FILE
 echo "$(date): [生成报告] A 股 ML 分析报告" >> $LOG_FILE
 
 # 运行 ML 分析
-python3 ml_stock_analysis_ensemble.py --limit 50 >> $LOG_FILE 2>&1
+python3 -m src.analysis.ml_ensemble --limit 50 >> $LOG_FILE 2>&1
 
 echo "$(date): [报告完成] A 股 ML 分析完成" >> $LOG_FILE

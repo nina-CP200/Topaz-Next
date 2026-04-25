@@ -18,11 +18,7 @@ import requests
 import time
 import json
 import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from utils import load_stock_list_from_json
+from src.utils.utils import load_stock_list_from_json
 
 
 def get_tencent_history(symbol: str, days: int = 500) -> pd.DataFrame:
@@ -157,9 +153,9 @@ def fetch_csi300_full_history(output_file: str = 'csi300_full_history.csv', limi
     print("数据源: 腾讯财经（主） + 新浪财经（备）")
     
     # 加载股票列表
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     if stock_list_file is None:
-        stock_list_file = os.path.join(base_dir, 'csi300_stocks.json')
+        stock_list_file = os.path.join(base_dir, 'config/csi300_stocks.json')
     
     stocks = load_stock_list_from_json(stock_list_file)
     
@@ -221,7 +217,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description='获取沪深300历史数据')
-    parser.add_argument('--output', default='csi300_full_history.csv', help='输出文件名')
+    parser.add_argument('--output', default='data/raw/csi300_full_history.csv', help='输出文件名')
     parser.add_argument('--limit', type=int, default=None, help='限制股票数量（测试用）')
     
     args = parser.parse_args()

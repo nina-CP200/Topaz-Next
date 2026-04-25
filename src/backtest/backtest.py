@@ -67,9 +67,7 @@ import joblib
 import warnings
 warnings.filterwarnings('ignore')
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from feature_engineer import FeatureEngineer
+from src.features.engineer import FeatureEngineer
 
 
 class BacktestEngine:
@@ -601,13 +599,13 @@ def main():
     - 回测结果仅供参考，不构成投资建议
     - 实盘交易前请进行充分的样本外测试
     """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
-    model_path = os.path.join(base_dir, 'ensemble_model.pkl')
+    model_path = os.path.join(base_dir, 'data/models/ensemble_model.pkl')
     if not os.path.exists(model_path):
-        model_path = os.path.join(base_dir, 'ensemble_model_csi300_2y.pkl')
+        model_path = os.path.join(base_dir, 'data/models/ensemble_model_csi300_2y.pkl')
     
-    data_path = os.path.join(base_dir, 'csi300_raw_data_2y.csv')
+    data_path = os.path.join(base_dir, 'data/raw/csi300_full_history.csv')
     
     if not os.path.exists(model_path):
         print(f"❌ 未找到模型文件")

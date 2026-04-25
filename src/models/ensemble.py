@@ -201,7 +201,7 @@ class EnsembleModel:
     ════════════════════════════════════════════════════════════════════════════
     """
     
-    def __init__(self, model_dir: str = '.'):
+    def __init__(self, model_dir: str = 'data/models'):
         """
         初始化集成模型
         

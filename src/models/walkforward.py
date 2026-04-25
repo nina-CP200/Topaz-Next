@@ -15,8 +15,6 @@ from typing import List, Dict, Tuple, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -24,9 +22,9 @@ from sklearn.metrics import accuracy_score, roc_auc_score, classification_report
 import lightgbm as lgb
 import joblib
 
-from feature_engineer import FeatureEngineer
-from market_data import get_index_history
-from quantpilot_data_api import get_history_data
+from src.features.engineer import FeatureEngineer
+from src.data.market import get_index_history
+from src.data.api import get_history_data
 
 
 def calculate_sharpe_ratio(returns: np.ndarray, risk_free_rate: float = 0.02) -> float:
@@ -92,43 +90,26 @@ class WalkForwardTrainer:
         return df
     
     def prepare_features(self, df: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
-        """准备特征 - 个股特异性特征为主"""
-        exclude_cols = ['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'name',
+        """准备特征 - 使用 FeatureEngineer 生成特征"""
+        exclude_cols = ['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'name', 'symbol',
                         'future_return', 'target', 'return_rank', 'excess_return']
         
-        alpha_features = [
-            'rsi_14', 'rsi_6', 'macd', 'macd_hist', 'macd_signal',
-            'bb_position', 'bb_width', 'cci', 'williams_r',
-            'momentum_5', 'momentum_10', 'momentum_accel',
-            'volatility_5', 'volatility_10', 'volatility_20',
-            'volume_ratio_5', 'volume_ratio_10', 'volume_ratio_20',
-            'obv', 'turnover', 'amihud',
-            'price_position_10', 'price_position_20', 'close_position',
-            'return_1d', 'return_3d', 'return_5d',
-            'max_drawdown_20', 'sharpe_proxy',
-            'consecutive_up', 'consecutive_down', 'gap',
-            'is_hammer', 'is_shooting_star', 'is_engulfing',
-            'ma5_slope', 'ma10_slope', 'ma20_slope',
-            'adx', 'atr_ratio', 'tr_14',
-            'kurtosis_20', 'skewness_20',
-            'return_autocorr_5', 'mean_reversion_20',
-            'body_ratio', 'upper_shadow', 'lower_shadow'
-        ]
+        # 使用 FeatureEngineer 生成特征
+        fe = FeatureEngineer()
+        df = fe.generate_all_features(df)
         
-        feature_cols = [col for col in alpha_features if col in df.columns]
-        
-        if len(feature_cols) < 10:
-            all_cols = [col for col in df.columns 
+        # 获取特征列
+        feature_cols = [col for col in df.columns 
                        if col not in exclude_cols 
-                       and df[col].dtype in ['float64', 'int64']]
-            feature_cols = all_cols[:30]
+                       and df[col].dtype in ['float64', 'int64', 'float32', 'int32']]
         
+        # 处理异常值
         for col in feature_cols:
             df[col] = df[col].replace([np.inf, -np.inf], np.nan)
             df[col] = df[col].fillna(df[col].median() if df[col].notna().any() else 0)
             df[col] = df[col].clip(-1e10, 1e10)
         
-        print(f"  alpha特征数: {len(feature_cols)}")
+        print(f"  特征数量: {len(feature_cols)}")
         print(f"  特征列表: {feature_cols[:10]}...")
         
         return df, feature_cols
@@ -416,8 +397,8 @@ def main():
     print(f"时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 加载数据
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(base_dir, 'csi300_raw_data_2y.csv')
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    data_path = os.path.join(base_dir, 'data/raw/csi300_full_history.csv')
     
     print(f"\n📂 加载数据: {data_path}")
     df = pd.read_csv(data_path)
@@ -437,7 +418,7 @@ def main():
     performance = trainer.train(df)
     
     # 保存最新模型
-    output_path = os.path.join(base_dir, 'ensemble_model.pkl')
+    output_path = os.path.join(base_dir, 'data/models/ensemble_model.pkl')
     trainer.save_latest_model(output_path)
     
     print("\n" + "="*60)

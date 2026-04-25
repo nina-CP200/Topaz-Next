@@ -53,12 +53,10 @@ import pandas as pd
 import json
 import time
 import os
-import sys
 from pathlib import Path
 from datetime import datetime
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from quantpilot_data_api import get_history_data
+from src.data.api import get_history_data
 
 
 def get_kline(code, start='20200101', end='20260319'):
@@ -289,7 +287,7 @@ def main():
     print("=" * 60)
     
     # 读取股票列表
-    with open('csi300_stocks.json') as f:
+    with open('config/csi300_stocks.json') as f:
         stocks = json.load(f)
     
     industry_map = {s['code']: s.get('industry', '其他') for s in stocks}

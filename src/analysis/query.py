@@ -66,8 +66,7 @@ def load_analysis_results() -> dict:
     Returns:
         dict: 分析结果数据，如果文件不存在返回 None
     """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    result_file = os.path.join(base_dir, "latest_analysis_results.json")
+    result_file = "data/raw/latest_analysis_results.json"
     
     if not os.path.exists(result_file):
         return None
@@ -127,7 +126,7 @@ def query_stock(stock_code: str) -> None:
         print("    2. 该股票不在沪深300成分股中")
         print("    3. 分析结果文件需要更新")
         print()
-        print("  提示: 请检查 csi300_stocks.json 是否包含该股票")
+        print("  提示: 请检查 config/csi300_stocks.json 是否包含该股票")
         return
     
     # 显示查询结果

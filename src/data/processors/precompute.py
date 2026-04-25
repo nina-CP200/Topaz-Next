@@ -57,20 +57,17 @@
 """
 
 import os
-import sys
 import argparse
 import numpy as np
 from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from feature_engineer import FeatureEngineer
-from quantpilot_data_api import get_history_data
-from market_data import get_index_history
-from cache_manager import CacheManager
-from utils import load_stock_list_from_json
+from src.features.engineer import FeatureEngineer
+from src.data.api import get_history_data
+from src.data.market import get_index_history
+from src.data.cache import CacheManager
+from src.utils.utils import load_stock_list_from_json
 
 
 def compute_single_stock(args):
@@ -256,8 +253,8 @@ def precompute_features(
         date = datetime.now().strftime("%Y-%m-%d")
 
     if stock_list_file is None:
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        stock_list_file = os.path.join(base_dir, "csi300_stocks.json")
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+        stock_list_file = os.path.join(base_dir, "config/csi300_stocks.json")
 
     print(f"\n{'=' * 60}")
     print(f"📦 特征预计算 - {date}")

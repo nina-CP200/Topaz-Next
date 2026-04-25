@@ -46,7 +46,7 @@ from typing import List, Dict, Optional
 import warnings
 warnings.filterwarnings('ignore')
 
-from quantpilot_data_api import get_history_data, get_stock_data
+from src.data.api import get_history_data, get_stock_data
 
 
 class TrainingDataCollector:
@@ -77,7 +77,7 @@ class TrainingDataCollector:
             rate_limited: 是否触发了API限流
             index_data: 沪深300指数历史数据DataFrame
         """
-        self.data_dir = data_dir or os.path.dirname(os.path.abspath(__file__))
+        self.data_dir = data_dir or os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), 'config')
         self.stocks = []
         self.stock_industry = {}
         self.collected = 0

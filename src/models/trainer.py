@@ -61,12 +61,10 @@ from typing import List, Dict, Tuple
 import warnings
 warnings.filterwarnings('ignore')
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from ensemble_model import EnsembleModel
-from feature_engineer import FeatureEngineer
-from market_data import get_index_history
-from quantpilot_data_api import get_history_data
+from src.models.ensemble import EnsembleModel
+from src.features.engineer import FeatureEngineer
+from src.data.market import get_index_history
+from src.data.api import get_history_data
 
 
 def load_raw_data(data_path: str) -> pd.DataFrame:
@@ -274,7 +272,7 @@ def prepare_features(df: pd.DataFrame, fe: FeatureEngineer) -> Tuple[pd.DataFram
 
     # 验证特征值范围（修复后的关键步骤）
     print("  验证特征值范围...")
-    from validate_features import validate_features, fix_features
+    from src.features.validator import validate_features, fix_features
     is_valid, issues = validate_features(df, verbose=True)
     if not is_valid:
         print(f"  发现 {len(issues)} 个问题特征，正在修复...")
@@ -493,7 +491,7 @@ def train_model(df: pd.DataFrame, feature_cols: List[str]) -> EnsembleModel:
     print(f"标签分布: 上涨 {up:,} ({up/len(df_clean)*100:.1f}%), 下跌 {down:,} ({down/len(df_clean)*100:.1f}%)")
     
     # 创建模型
-    model = EnsembleModel(model_dir=os.path.dirname(os.path.abspath(__file__)))
+    model = EnsembleModel(model_dir='data/models')
     
     # 训练
     model.train(
@@ -643,14 +641,14 @@ def main():
     """
     import argparse
     parser = argparse.ArgumentParser(description='Topaz 模型重新训练')
-    parser.add_argument('--data', type=str, default='csi300_full_history.csv', help='训练数据文件（fetch_full_history.py生成）')
+    parser.add_argument('--data', type=str, default='data/raw/csi300_full_history.csv', help='训练数据文件（fetch_full_history.py生成）')
     parser.add_argument('--forward-days', type=int, default=5, help='预测未来几天收益')
     parser.add_argument('--threshold', type=float, default=0.02, help='上涨阈值')
     parser.add_argument('--balance', type=str, default='undersample', 
                         choices=['undersample', 'oversample', 'none'], help='样本平衡方法')
     args = parser.parse_args()
     
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     data_path = os.path.join(base_dir, args.data)
     
     print("="*60)
@@ -691,14 +689,14 @@ def main():
         'validation': validation
     }
     
-    info_path = os.path.join(base_dir, 'training_info.json')
+    info_path = os.path.join(base_dir, 'data/raw/training_info.json')
     with open(info_path, 'w') as f:
         json.dump(training_info, f, indent=2)
     
     print("\n" + "="*60)
     print("✅ 训练完成!")
     print("="*60)
-    print(f"模型文件: {os.path.join(base_dir, 'ensemble_model.pkl')}")
+    print(f"模型文件: {os.path.join(base_dir, 'data/models/ensemble_model.pkl')}")
     print(f"训练信息: {info_path}")
 
 

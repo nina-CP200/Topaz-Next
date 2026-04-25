@@ -792,7 +792,7 @@ def main():
 #    python send_report.py execute report.txt
 #
 # 2. 作为模块导入使用:
-#    from send_report import send_score_ranking, send_slack_message
+#    from src.reports.sender import send_score_ranking, send_slack_message
 #    
 #    # 发送评分排名（推荐方式）
 #    results = [
