@@ -38,11 +38,32 @@ bash setup.sh --china
 ```
 
 脚本自动完成：
-1. 检查 Python 环境
-2. 安装依赖库
-3. 获取沪深300历史数据
-4. 训练预测模型
-5. 配置 Slack（可选）
+1. 安装 uv（如果未安装）
+2. 创建 `.venv` 虚拟环境
+3. 安装依赖库
+4. 获取沪深300历史数据
+5. 训练预测模型
+6. 配置 Slack（可选）
+
+### 手动配置
+
+如果你不想用 setup.sh，也可以手动：
+
+```bash
+# 1. 安装 uv（https://docs.astral.sh/uv/getting-started/installation/）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 克隆项目
+git clone https://github.com/nina-CP200/Topaz-Next.git
+cd Topaz-Next
+
+# 3. 创建虚拟环境并安装依赖
+uv venv
+uv pip install -r requirements.txt
+
+# 4. 准备目录
+mkdir -p data/raw data/models data/cache
+```
 
 ### 环境配置（可选）
 
@@ -68,11 +89,11 @@ SLACK_CHANNEL=xxxxxxx
 ### 运行分析
 
 ```bash
-# 分析（首次运行会自动获取历史数据并训练模型）
-python3 -m src.analysis.daily
+# 每日分析（首次运行会自动获取历史数据并训练模型）
+uv run python -m src.analysis.daily
 
 # 使用沪深300分组模型
-python3 -m src.analysis.daily --csi300
+uv run python -m src.analysis.daily --csi300
 ```
 
 ---
@@ -107,28 +128,28 @@ python3 -m src.analysis.daily --csi300
 
 ```bash
 # 查询特定股票
-python3 -m src.analysis.query 600519      # 贵州茅台
-python3 -m src.analysis.query 000001.SZ   # 平安银行
+uv run python -m src.analysis.query 600519      # 贵州茅台
+uv run python -m src.analysis.query 000001.SZ   # 平安银行
 
 # 显示排名前10股票
-python3 -m src.analysis.query --top 10
+uv run python -m src.analysis.query --top 10
 ```
 
 ### 3. 模型训练（src/models/）
 
 ```bash
 # Walk-Forward训练（推荐）
-python3 -m src.models.walkforward
+uv run python -m src.models.walkforward
 
 # 基础训练
-python3 -m src.models.trainer
+uv run python -m src.models.trainer
 ```
 
 ### 4. 回测系统（src/backtest/backtest.py）
 
 ```bash
 # 回测模型表现
-python3 -m src.backtest.backtest
+uv run python -m src.backtest.backtest
 ```
 
 ---
@@ -170,7 +191,8 @@ topaz-next/
 ├── config/         # 配置文件（股票列表、环境变量）
 ├── data/           # 数据目录（运行时生成，不入Git）
 ├── setup.sh        # 一键配置脚本
-└── requirements.txt
+├── requirements.txt
+└── .venv/          # 虚拟环境（不入Git）
 ```
 
 详细结构可用 `tree -L 3 src/` 查看。
@@ -186,24 +208,18 @@ topaz-next/
 
 ---
 
-## 定时任务配置
+## 定时分析推荐：AstrBot
 
-### Crontab 设置
+如果你希望实现**自动化定时分析**并将结果推送到 QQ、微信、Telegram 等即时通讯平台，强烈推荐使用 **AstrBot**：
 
-```bash
-crontab -e
-```
+- **多平台支持**：QQ、微信、Telegram、飞书等
+- **插件生态**：丰富的插件系统，可轻松对接本项目的分析脚本
+- **定时任务**：内置定时任务调度，无需手动配置 crontab
+- **AI 对话**：支持接入各大 LLM，实现智能问答式分析
 
-添加以下内容：
+**GitHub 项目地址**：[https://github.com/AstrBotDevs/AstrBot](https://github.com/AstrBotDevs/AstrBot)
 
-```cron
-# Topaz-Next 每日定时任务（工作日，A股交易时间）
-# 09:45 生成分析报告
-45 9 * * 1-5 /bin/bash ~/topaz-next/scripts/daily_report.sh
-
-# 10:00 运行分析并发送Slack
-0 10 * * 1-5 /bin/bash ~/topaz-next/scripts/daily_decision.sh
-```
+你可以将 Topaz-Next 的分析脚本封装为 AstrBot 插件，实现交易日自动推送分析报告、支持聊天查询股票等功能。
 
 ---
 
@@ -218,7 +234,7 @@ crontab -e
 - joblib >= 1.5.3
 
 **系统要求**：
-- Python 3.7+
+- Python 3.8+
 - 4GB+ 内存
 - 稳定网络连接
 
@@ -258,7 +274,7 @@ crontab -e
 
 ### Q: 首次运行如何获取数据？
 
-首次运行 `python3 -m src.analysis.daily` 时，系统会自动：
+首次运行 `uv run python -m src.analysis.daily` 时，系统会自动：
 1. 从腾讯/新浪API获取沪深300历史数据
 2. 构建特征并缓存
 3. 训练模型（如果没有现成模型）

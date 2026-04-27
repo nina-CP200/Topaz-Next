@@ -28,7 +28,7 @@ echo "" >> $LOG_FILE
 echo "========================================" >> $LOG_FILE
 echo "$(date): [生成报告] A 股 ML 分析报告" >> $LOG_FILE
 
-# 运行 ML 分析
-python3 -m src.analysis.ml_ensemble --limit 50 >> $LOG_FILE 2>&1
+# 运行 ML 分析（使用项目自带的 .venv）
+.venv/bin/python -m src.analysis.ml_ensemble --limit 50 >> $LOG_FILE 2>&1
 
 echo "$(date): [报告完成] A 股 ML 分析完成" >> $LOG_FILE

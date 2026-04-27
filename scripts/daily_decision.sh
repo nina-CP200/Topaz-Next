@@ -12,7 +12,7 @@ echo "" >> $LOG_FILE
 echo "========================================" >> $LOG_FILE
 echo "$(date): [股票分析] 生成分析报告" >> $LOG_FILE
 
-# 运行分析脚本
-python3 -m src.analysis.daily >> $LOG_FILE 2>&1
+# 运行分析脚本（使用项目自带的 .venv）
+.venv/bin/python -m src.analysis.daily >> $LOG_FILE 2>&1
 
 echo "$(date): [分析完成] 报告生成完成" >> $LOG_FILE

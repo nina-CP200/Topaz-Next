@@ -10,8 +10,6 @@ set -e
 
 REPO_URL="https://github.com/nina-CP200/Topaz-Next"
 INSTALL_DIR="$HOME/topaz-next"
-PYTHON_CMD=""
-PIP_CMD=""
 MIRROR_URL=""
 USE_CHINA=false
 IS_REMOTE=false
@@ -61,59 +59,37 @@ detect_mode() {
     fi
 }
 
-check_python() {
-    log_step 1 "检查 Python 环境"
-    
-    if check_command python3; then
-        PYTHON_CMD="python3"
-    elif check_command python; then
-        PYTHON_CMD="python"
-    else
-        log_error "未找到 Python，请先安装 Python 3.8+"
-        log_info "安装方法："
-        log_info "  macOS:  brew install python3"
-        log_info "  Ubuntu: sudo apt install python3"
-        log_info "  Windows: https://www.python.org/downloads/"
-        exit 1
-    fi
-    
-    VERSION=$($PYTHON_CMD --version 2>&1 | awk '{print $2}')
-    log_success "Python 版本: $VERSION"
-    
-    MAJOR=$(echo $VERSION | cut -d. -f1)
-    MINOR=$(echo $VERSION | cut -d. -f2)
-    
-    if [ "$MAJOR" -lt 3 ] || ([ "$MAJOR" -eq 3 ] && [ "$MINOR" -lt 8 ]); then
-        log_error "Python 版本过低，需要 3.8+"
-        exit 1
-    fi
-}
+check_uv() {
+    log_step 1 "检查 uv 环境"
 
-check_pip() {
-    log_step 2 "检查 pip"
-    
-    if check_command pip3; then
-        PIP_CMD="pip3"
-    elif check_command pip; then
-        PIP_CMD="pip"
-    else
-        log_info "安装 pip..."
-        $PYTHON_CMD -m ensurepip --default-pip
-        PIP_CMD="pip"
+    if check_command uv; then
+        log_success "uv 已安装: $(uv --version)"
+        return
     fi
-    
-    log_success "pip 已就绪"
+
+    log_info "未找到 uv，正在安装..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # 确保当前 shell 能找到 uv
+    export PATH="$HOME/.local/bin:$PATH"
+
+    if ! check_command uv; then
+        log_error "uv 安装失败，请手动安装: https://docs.astral.sh/uv/getting-started/installation/"
+        exit 1
+    fi
+
+    log_success "uv 安装完成: $(uv --version)"
 }
 
 detect_network() {
-    log_step 3 "检测网络环境"
-    
+    log_step 2 "检测网络环境"
+
     if [ "$USE_CHINA" = true ]; then
         MIRROR_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
         log_info "使用中国镜像源（清华大学）"
         return
     fi
-    
+
     read -p "是否在中国大陆？(y/n): " in_china
     if [ "$in_china" = "y" ] || [ "$in_china" = "Y" ]; then
         MIRROR_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
@@ -128,9 +104,9 @@ clone_repo() {
     if [ "$IS_REMOTE" = false ]; then
         return
     fi
-    
-    log_step 4 "克隆项目"
-    
+
+    log_step 3 "克隆项目"
+
     if [ -d "$PROJECT_DIR" ]; then
         log_warn "目录已存在: $PROJECT_DIR"
         read -p "是否删除并重新安装？(y/n): " choice
@@ -142,7 +118,7 @@ clone_repo() {
             return
         fi
     fi
-    
+
     if ! check_command git; then
         log_error "未找到 git"
         log_info "安装方法："
@@ -150,37 +126,44 @@ clone_repo() {
         log_info "  Ubuntu: sudo apt install git"
         exit 1
     fi
-    
+
     git clone "$REPO_URL" "$PROJECT_DIR"
     cd "$PROJECT_DIR"
     log_success "项目克隆完成"
 }
 
 install_deps() {
-    log_step 5 "安装依赖"
-    
+    log_step 4 "创建虚拟环境并安装依赖"
+
+    if [ ! -d ".venv" ]; then
+        uv venv
+        log_success "虚拟环境已创建 (.venv)"
+    else
+        log_info "虚拟环境已存在 (.venv)"
+    fi
+
     if [ -n "$MIRROR_URL" ]; then
         log_info "镜像源: $MIRROR_URL"
-        $PIP_CMD install -i "$MIRROR_URL" -r requirements.txt
+        uv pip install -i "$MIRROR_URL" -r requirements.txt
     else
-        $PIP_CMD install -r requirements.txt
+        uv pip install -r requirements.txt
     fi
-    
+
     log_success "依赖安装完成"
 }
 
 setup_dirs() {
-    log_step 6 "创建目录结构"
-    
+    log_step 5 "创建目录结构"
+
     mkdir -p data/raw data/models data/cache
     mkdir -p config
-    
+
     log_success "目录创建完成"
 }
 
 fetch_data() {
-    log_step 7 "获取沪深300历史数据"
-    
+    log_step 6 "获取沪深300历史数据"
+
     if [ -f "$PROJECT_DIR/data/raw/csi300_full_history.csv" ]; then
         lines=$(wc -l < "$PROJECT_DIR/data/raw/csi300_full_history.csv" | tr -d ' ')
         if [ "$lines" -gt 1000 ]; then
@@ -191,22 +174,22 @@ fetch_data() {
             fi
         fi
     fi
-    
+
     log_info "获取数据（预计 3-5 分钟）..."
-    
-    $PYTHON_CMD -m src.data.fetchers.full_history --output data/raw/csi300_full_history.csv
-    
+
+    uv run python -m src.data.fetchers.full_history --output data/raw/csi300_full_history.csv
+
     if [ ! -f "$PROJECT_DIR/data/raw/csi300_full_history.csv" ]; then
         log_error "数据获取失败"
         exit 1
     fi
-    
+
     log_success "数据获取完成"
 }
 
 train_model() {
-    log_step 8 "训练模型"
-    
+    log_step 7 "训练模型"
+
     if [ -f "$PROJECT_DIR/data/models/ensemble_model.pkl" ]; then
         log_success "已有模型文件"
         read -p "是否重新训练？(y/n): " choice
@@ -214,43 +197,43 @@ train_model() {
             return
         fi
     fi
-    
+
     if [ ! -f "$PROJECT_DIR/data/raw/csi300_full_history.csv" ]; then
         log_error "未找到训练数据"
         exit 1
     fi
-    
+
     log_info "训练模型（预计 2-3 分钟）..."
-    
-    $PYTHON_CMD -m src.models.trainer --data data/raw/csi300_full_history.csv
-    
+
+    uv run python -m src.models.trainer --data data/raw/csi300_full_history.csv
+
     if [ ! -f "$PROJECT_DIR/data/models/ensemble_model.pkl" ]; then
         log_error "模型训练失败"
         exit 1
     fi
-    
+
     log_success "模型训练完成"
 }
 
 test_run() {
-    log_step 9 "测试运行"
-    
+    log_step 8 "测试运行"
+
     read -p "是否运行测试？(y/n): " choice
     if [ "$choice" != "y" ] && [ "$choice" != "Y" ]; then
         return
     fi
-    
+
     log_info "运行测试分析..."
-    $PYTHON_CMD -m src.analysis.query --top 5
+    uv run python -m src.analysis.query --top 5
     log_success "测试完成"
 }
 
 configure_slack() {
-    log_step 10 "配置 Slack（可选）"
-    
+    log_step 9 "配置 Slack（可选）"
+
     log_info "Slack 推送功能需要 Bot Token"
     read -p "是否配置？(y/n): " choice
-    
+
     if [ "$choice" != "y" ] && [ "$choice" != "Y" ]; then
         if [ -f "config/.env.example" ] && [ ! -f ".env" ]; then
             cp config/.env.example .env
@@ -258,21 +241,21 @@ configure_slack() {
         fi
         return
     fi
-    
+
     echo ""
     log_info "获取 Token：https://api.slack.com/apps"
     log_info "添加 chat.postMessage 权限，安装后获取 Bot Token"
     echo ""
-    
+
     read -p "请输入 Slack Bot Token: " token
     if [ -z "$token" ] || [[ ! "$token" =~ ^xoxb- ]]; then
         log_warn "Token 格式不正确，已跳过"
         return
     fi
-    
+
     read -p "请输入 Channel（默认 #investments）: " channel
     [ -z "$channel" ] && channel="#investments"
-    
+
     echo "SLACK_BOT_TOKEN=$token" > .env
     echo "SLACK_CHANNEL=$channel" >> .env
     log_success "配置保存到 .env"
@@ -286,27 +269,21 @@ show_complete() {
     echo ""
     echo "项目目录: $PROJECT_DIR"
     echo ""
-    echo "常用命令："
+    echo "常用命令（无需手动激活环境）："
     echo "  cd $PROJECT_DIR"
     echo ""
     echo "  # 每日分析"
-    echo "  python3 -m src.analysis"
+    echo "  uv run python -m src.analysis.daily"
     echo ""
     echo "  # 股票查询"
-    echo "  python3 -m src.analysis.query 600519"
-    echo "  python3 -m src.analysis.query --top 10"
+    echo "  uv run python -m src.analysis.query 600519"
+    echo "  uv run python -m src.analysis.query --top 10"
     echo ""
     echo "  # 重新训练"
-    echo "  python3 -m src.models"
+    echo "  uv run python -m src.models"
     echo ""
     echo "  # 回测验证"
-    echo "  python3 -m src.backtest"
-    echo ""
-    echo "定时任务（可选）："
-    echo "  crontab -e"
-    echo "  添加："
-    echo "  45 9 * * 1-5 /bin/bash $PROJECT_DIR/scripts/daily_report.sh"
-    echo "  0 10 * * 1-5 /bin/bash $PROJECT_DIR/scripts/daily_decision.sh"
+    echo "  uv run python -m src.backtest"
     echo ""
     echo "Slack 推送（可选）："
     echo "  编辑 .env 配置 SLACK_BOT_TOKEN"
@@ -315,16 +292,15 @@ show_complete() {
 
 main() {
     parse_args "$@"
-    
+
     echo ""
     echo "=========================================="
     echo "  Topaz-Next 一键配置"
     echo "=========================================="
     echo ""
-    
+
     detect_mode
-    check_python
-    check_pip
+    check_uv
     detect_network
     clone_repo
     install_deps
