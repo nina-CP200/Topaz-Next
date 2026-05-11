@@ -97,6 +97,14 @@ us_*.json
 
 # 分析结果（运行时生成）
 data/raw/latest_analysis_results.json
+data/raw/analysis_status.json
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+
+# 市场状态（运行时生成）
+.market_state.json
 
 # 多余的关注列表和股票列表
 A股关注股票列表.md

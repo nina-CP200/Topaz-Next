@@ -966,31 +966,58 @@ def get_market_adjusted_thresholds(market_env: str) -> Dict:
     """
     thresholds = {
         'bull': {
-            'buy_threshold': 0.65,      # 牛市降低买入门槛
-            'sell_threshold': 0.35,     # 牛市提高卖出门槛
-            'position_max': 0.95,       # 允许更高仓位
-            'single_max': 0.25,         # 单股最大仓位
+            'buy_threshold': 0.55,
+            'sell_threshold': 0.35,
+            'position_max': 0.95,
+            'single_max': 0.25,
+            'deep_bottom_fishing': True,
+            'stop_loss': -0.08,
+            'take_profit': 0.25,
+            'holding_days': 10,
             'description': '牛市环境，积极做多'
         },
         'bear': {
-            'buy_threshold': 0.80,      # 熊市提高买入门槛
-            'sell_threshold': 0.50,     # 熊市降低卖出门槛
-            'position_max': 0.60,       # 降低仓位上限
-            'single_max': 0.15,         # 单股最大仓位降低
+            'buy_threshold': 0.75,
+            'sell_threshold': 0.50,
+            'position_max': 0.60,
+            'single_max': 0.15,
+            'deep_bottom_fishing': True,
+            'stop_loss': -0.04,
+            'take_profit': 0.15,
+            'holding_days': 5,
             'description': '熊市环境，保守防守'
         },
         'recovery': {
-            'buy_threshold': 0.75,
+            'buy_threshold': 0.65,
             'sell_threshold': 0.40,
             'position_max': 0.80,
             'single_max': 0.20,
+            'deep_bottom_fishing': True,
+            'stop_loss': -0.05,
+            'take_profit': 0.18,
+            'holding_days': 7,
             'description': '反弹环境，精选抄底'
         },
+        'pullback': {
+            'buy_threshold': 0.60,
+            'sell_threshold': 0.40,
+            'position_max': 0.80,
+            'single_max': 0.20,
+            'deep_bottom_fishing': False,
+            'stop_loss': -0.05,
+            'take_profit': 0.15,
+            'holding_days': 7,
+            'description': '回调环境，逢低布局'
+        },
         'sideways': {
-            'buy_threshold': 0.70,
+            'buy_threshold': 0.60,
             'sell_threshold': 0.40,
             'position_max': 0.85,
             'single_max': 0.20,
+            'deep_bottom_fishing': False,
+            'stop_loss': -0.06,
+            'take_profit': 0.12,
+            'holding_days': 7,
             'description': '震荡环境，中性策略'
         }
     }

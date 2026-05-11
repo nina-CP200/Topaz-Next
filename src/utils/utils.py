@@ -84,13 +84,20 @@ def load_stock_list_from_json(file_path: str) -> List[Tuple[str, str, str]]:
     --------
     >>> stocks = load_stock_list_from_json("stocks.json")
     >>> print(stocks[0])
-    ('600519.SH', '贵州茅台', '')
+    ('600519.SH', '贵州茅台', '白酒')
     """
     if not os.path.exists(file_path):
         return []
     
     with open(file_path, 'r', encoding='utf-8') as f:
         stocks_data = json.load(f)
+    
+    # 加载行业分类映射
+    industry_map = {}
+    industry_file = os.path.join(os.path.dirname(file_path), "csi300_industry_map.json")
+    if os.path.exists(industry_file):
+        with open(industry_file, 'r', encoding='utf-8') as f:
+            industry_map = json.load(f)
     
     stocks = []
     for s in stocks_data:
@@ -106,7 +113,8 @@ def load_stock_list_from_json(file_path: str) -> List[Tuple[str, str, str]]:
                 symbol = f"{code}.SZ"
             else:
                 symbol = code
-            stocks.append((symbol, name, ""))
+            industry = industry_map.get(symbol, industry_map.get(code, ""))
+            stocks.append((symbol, name, industry))
     
     return stocks
 

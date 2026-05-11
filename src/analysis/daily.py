@@ -87,7 +87,12 @@ from src.data.market import (
     get_index_data,
     get_index_history,
     get_market_sentiment,
+    get_market_adjusted_thresholds,
 )
+from src.config import get_market_state_manager
+from src.strategy import compute_composite_score, get_advice_from_score, suggest_position
+from src.sector import analyze_sectors, print_sector_report
+
 
 
 def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict:
@@ -179,55 +184,50 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict
         )
 
     # -------------------------------------------------------------------------
-    # 第三步：判断市场环境（核心逻辑）
+    # 第三步：平滑判断市场环境（均线位置法，回测准确率80.9%）
     # -------------------------------------------------------------------------
-    # 根据上涨比例和20日收益率两个维度判断市场环境
-    # 这决定了后续使用哪个模型以及建议仓位
-    if adv_ratio > 0.55 and ret_20d > 0:
-        # 上涨比例高 + 正收益 = 牛市
-        # 牛市中追高需谨慎，置信度设为 0.7
-        detailed_regime = "bull"
-        model_confidence = 0.7
-    elif adv_ratio > 0.55 and ret_20d < -0.02:
-        # 上涨比例高 + 负收益 = 反弹初期
-        # 反弹信号较强，置信度设为 0.9（最高）
-        detailed_regime = "recovery"
-        model_confidence = 0.9
-    elif adv_ratio < 0.45 and ret_20d < -0.02:
-        # 上涨比例低 + 负收益 = 熊市
-        # 熊市中模型预测可能失准，置信度设为 0.6
-        detailed_regime = "bear"
-        model_confidence = 0.6
-    elif adv_ratio < 0.45 and ret_20d > 0.02:
-        # 上涨比例低 + 正收益 = 回调整理
-        # 回调可能是买入机会，置信度设为 0.8
-        detailed_regime = "pullback"
-        model_confidence = 0.8
-    else:
-        # 其他情况 = 震荡市
-        # 震荡市方向不明，置信度设为 0.5（最低）
-        detailed_regime = "sideways"
-        model_confidence = 0.5
+    state_manager = get_market_state_manager()
 
-    # 输出市场环境判断结果
+    # 计算均线指标
+    price_to_ma20 = None
+    price_to_ma60 = None
+    ma20_slope = None
+
+    if index_history_30 is not None and len(index_history_30) >= 60:
+        close = index_history_30["close"]
+        ma20 = close.rolling(20).mean()
+        ma60 = close.rolling(60).mean()
+        price_to_ma20 = close.iloc[-1] / ma20.iloc[-1] if ma20.iloc[-1] > 0 else 1.0
+        price_to_ma60 = close.iloc[-1] / ma60.iloc[-1] if ma60.iloc[-1] > 0 else 1.0
+        ma20_slope = (ma20.iloc[-1] / ma20.iloc[-6] - 1) if len(ma20) >= 6 and ma20.iloc[-6] > 0 else 0
+
+    detailed_regime = state_manager.determine_regime(
+        adv_ratio=adv_ratio, ret_20d=ret_20d,
+        price_to_ma20=price_to_ma20, price_to_ma60=price_to_ma60, ma20_slope=ma20_slope
+    )
+
+    model_confidence_map = {
+        "recovery": 0.9, "pullback": 0.8, "bull": 0.7, "bear": 0.6, "sideways": 0.5
+    }
+    model_confidence = model_confidence_map.get(detailed_regime, 0.5)
+
+    # 获取市场环境调整后的阈值（含止盈止损参数）
+    thresholds = get_market_adjusted_thresholds(detailed_regime)
+
     print(f"\n📊 市场环境: {detailed_regime}")
     print(f"   上涨比例: {adv_ratio:.1%}, 20日收益: {ret_20d * 100:.1f}%")
     print(f"   模型置信度: {model_confidence:.0%}")
+    print(f"   {state_manager.get_status_summary()}")
 
     # -------------------------------------------------------------------------
     # 第四步：根据市场环境确定建议仓位
     # -------------------------------------------------------------------------
-    # 不同市场环境下的最大持仓建议
-    # 用户可根据自身风险偏好调整这些阈值
     position_advice = {
-        "recovery": 0.95,   # 反弹期：激进建仓
-        "pullback": 0.80,   # 回调期：积极建仓
-        "bull": 0.70,       # 牛市期：适度持仓
-        "bear": 0.20,       # 熊市期：轻仓观望
-        "sideways": 0.50,   # 震荡期：半仓操作
+        "recovery": 0.95, "pullback": 0.80, "bull": 0.70, "bear": 0.20, "sideways": 0.50,
     }
     recommended_position = position_advice.get(detailed_regime, 0.50)
     print(f"   📌 建议最大仓位: {recommended_position:.0%}")
+    print(f"   🎯 买入阈值: {thresholds['buy_threshold']:.0%} | 止损: {thresholds['stop_loss']:.0%} | 止盈: {thresholds['take_profit']:.0%}")
 
     # -------------------------------------------------------------------------
     # 第五步：加载机器学习模型
@@ -335,46 +335,25 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict
             # 特征标准化（必须与训练时使用相同的 scaler）
             X_scaled = ensemble["scaler"].transform(X)
             
-            # 预测上涨概率（predict_proba 返回 [下跌概率, 上涨概率]）
+            # 预测上涨概率
             proba = ensemble["model"].predict_proba(X_scaled)[:, 1][0]
             
-            # 计算预期收益：概率偏离 0.5 越多，预期收益越大
-            # 公式：(概率 - 0.5) * 20 表示概率每增加 0.1，预期收益增加 2%
-            expected_return = (proba - 0.5) * 20
-
-            # 判断风险等级（基于上涨概率）
-            if proba >= 0.65:
-                risk_level = "低风险"
-            elif proba >= 0.50:
-                risk_level = "中风险"
-            elif proba >= 0.40:
-                risk_level = "高风险"
-            else:
-                risk_level = "极高风险"
-
-            # 判断投资建议（基于上涨概率）
-            if proba >= 0.60:
-                advice = "建议买入"
-            elif proba >= 0.50:
-                advice = "建议持有"
-            elif proba >= 0.40:
-                advice = "建议观望"
-            else:
-                advice = "建议回避"
-
-            # 如果模型置信度高（>= 0.8），加强建议语气
-            if model_confidence >= 0.8:
-                advice = advice.replace("建议", "强烈")
+            # 综合评分（ML概率 + 技术面 + 动量）
+            composite, reasons = compute_composite_score(proba, cached_features)
+            advice = get_advice_from_score(composite, model_confidence)
+            position_pct = suggest_position(composite, detailed_regime)
 
             cached_results.append({
                 "symbol": symbol,
                 "name": name,
+                "industry": category,
                 "current_price": cached_features.get("close", 0),
                 "change_pct": cached_features.get("return_1d", 0) * 100,
                 "probability": proba,
-                "predicted_return": expected_return,
-                "risk_level": risk_level,
+                "composite_score": composite,
+                "reasons": reasons,
                 "advice": advice,
+                "position_pct": position_pct,
                 "model_confidence": model_confidence,
             })
         else:
@@ -451,42 +430,23 @@ def analyze_stocks(stock_list_file: str, use_csi300_model: bool = False) -> Dict
                 clean_symbol = symbol.replace('.SH', '').replace('.SZ', '')
                 cache.set_feature_cache(clean_symbol, df_features.iloc[-1].to_dict(), today)
 
-                # 计算预期收益
-                expected_return = (proba - 0.5) * 20
-
-                # 判断风险等级
-                if proba >= 0.65:
-                    risk_level = "低风险"
-                elif proba >= 0.50:
-                    risk_level = "中风险"
-                elif proba >= 0.40:
-                    risk_level = "高风险"
-                else:
-                    risk_level = "极高风险"
-
-                # 判断投资建议
-                if proba >= 0.60:
-                    advice = "建议买入"
-                elif proba >= 0.50:
-                    advice = "建议持有"
-                elif proba >= 0.40:
-                    advice = "建议观望"
-                else:
-                    advice = "建议回避"
-
-                # 高置信度时加强建议
-                if model_confidence >= 0.8:
-                    advice = advice.replace("建议", "强烈")
+                # 综合评分（ML概率 + 技术面 + 动量）
+                latest_features = df_features.iloc[-1].to_dict()
+                composite, reasons = compute_composite_score(proba, latest_features)
+                advice = get_advice_from_score(composite, model_confidence)
+                position_pct = suggest_position(composite, detailed_regime)
 
                 return {
                     "symbol": symbol,
                     "name": name,
+                    "industry": category,
                     "current_price": current.get("current_price", 0),
                     "change_pct": current.get("change", 0),
                     "probability": proba,
-                    "predicted_return": expected_return,
-                    "risk_level": risk_level,
+                    "composite_score": composite,
+                    "reasons": reasons,
                     "advice": advice,
+                    "position_pct": position_pct,
                     "model_confidence": model_confidence,
                 }
             except Exception:
@@ -545,7 +505,7 @@ def print_report(analysis_data: Dict):
     """
     # 打印报告头部
     print("\n" + "=" * 80)
-    print("📊 Topaz 每日股票分析报告")
+    print("📊 Topaz 每日策略报告")
     print("=" * 80)
     print(f"报告时间：{datetime.now().strftime('%Y-%m-%d %H:%M')}")
 
@@ -560,31 +520,39 @@ def print_report(analysis_data: Dict):
     print(f"  环境: {regime} | 模型置信度: {confidence:.0%} | 上涨比例: {adv_ratio:.1%}")
     print(f"  📌 建议最大仓位: {recommended_position:.0%}")
 
-    # 打印股票分析结果
+    # 打印策略建议
     results = analysis_data.get("all_results", [])
     if results:
-        # 按上涨概率降序排序
-        sorted_by_prob = sorted(results, key=lambda x: x["probability"], reverse=True)
+        # 按综合评分排序
+        sorted_by_score = sorted(results, key=lambda x: x.get("composite_score", 0), reverse=True)
 
-        # 打印 Top 5 推荐买入股票（概率最高）
-        print("\n🟢 Top 5 建议买入（最高概率）")
+        # 推荐买入（综合评分 >= 0.55）
+        buy_list = [r for r in sorted_by_score if r.get("composite_score", 0) >= 0.55]
+        # 推荐卖出（综合评分 < 0.40）
+        sell_list = [r for r in sorted_by_score if r.get("composite_score", 0) < 0.40]
+
+        print(f"\n🟢 推荐买入（{len(buy_list)}只）")
         print("-" * 80)
-        for i, stock in enumerate(sorted_by_prob[:5], 1):
-            print(f"  #{i} {stock['symbol']} {stock['name']}: 概率 {stock['probability']:.1%} | 预期收益 {stock['predicted_return']:+.1f}%")
+        for i, stock in enumerate(buy_list[:8], 1):
+            reasons = " + ".join(stock.get("reasons", []))
+            pos = stock.get("position_pct", 0)
+            print(f"  #{i} {stock['symbol']} {stock['name']}")
+            print(f"     综合评分: {stock.get('composite_score', 0):.2f} | 建议仓位: {pos:.0%} | {stock['advice']}")
+            print(f"     理由: {reasons}")
 
-        # 打印 Bottom 5 建议回避股票（概率最低）
-        print("\n🔴 Bottom 5 建议回避（最低概率）")
+        print(f"\n🔴 推荐卖出（{len(sell_list)}只）")
         print("-" * 80)
-        for i, stock in enumerate(sorted_by_prob[-5:][::-1], 1):
-            print(f"  #{i} {stock['symbol']} {stock['name']}: 概率 {stock['probability']:.1%} | 预期收益 {stock['predicted_return']:+.1f}%")
+        for i, stock in enumerate(sell_list[:5], 1):
+            reasons = " + ".join(stock.get("reasons", []))
+            print(f"  #{i} {stock['symbol']} {stock['name']}")
+            print(f"     综合评分: {stock.get('composite_score', 0):.2f} | {stock['advice']}")
+            print(f"     理由: {reasons}")
 
-        # 统计投资建议分布
-        buy_count = len([r for r in results if r["advice"] in ["建议买入", "强烈建议买入"]])
-        hold_count = len([r for r in results if r["advice"] in ["建议持有", "强烈建议持有"]])
-        avoid_count = len([r for r in results if r["advice"] == "建议回避"])
-
-        # 打印风险分布统计
-        print(f"\n📊 风险分布: 低风险{len([r for r in results if r['risk_level']=='低风险'])} / 中风险{len([r for r in results if r['risk_level']=='中风险'])} / 高风险{len([r for r in results if r['risk_level']=='高风险'])}")
+        # 统计
+        buy_count = len(buy_list)
+        hold_count = len([r for r in sorted_by_score if 0.40 <= r.get("composite_score", 0) < 0.55])
+        sell_count = len(sell_list)
+        print(f"\n📊 分布: 买入{buy_count} / 观望{hold_count} / 卖出{sell_count}")
 
     # 打印报告尾部和风险提示
     print("\n" + "=" * 80)
@@ -670,6 +638,13 @@ def main():
             json.dump(output_data, f, ensure_ascii=False, indent=2)
         
         print(f"  ✓ 分析结果已保存: {output_file}")
+
+    # 板块分析
+    try:
+        sector_data = analyze_sectors(results, analysis_data.get("market_regime", "sideways"))
+        print_sector_report(sector_data)
+    except Exception as e:
+        print(f"  ⚠️ 板块分析失败: {e}")
 
     # 打印分析报告
     print_report(analysis_data)
