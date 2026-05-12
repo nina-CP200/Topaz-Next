@@ -191,8 +191,32 @@ clone_repo() {
 install_python_deps() {
     log_step "安装 Python 依赖"
 
+    if ! command -v python3 &> /dev/null; then
+        log_error "未找到 Python3，请先安装 Python 3.9+"
+        exit 1
+    fi
+
+    local py_ver
+    py_ver=$(python3 -c "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}')")
+    local py_major="${py_ver%%.*}"
+    local py_minor="${py_ver#*.}"
+
+    if [ "$py_major" -lt 3 ] || { [ "$py_major" -eq 3 ] && [ "$py_minor" -lt 9 ]; }; then
+        log_error "Python 版本过低 (${py_ver})，需要 3.9+"
+        log_info "建议安装 Python 3.11："
+        log_info "  macOS:  brew install python@3.11"
+        log_info "  Ubuntu: sudo apt install python3.11"
+        exit 1
+    fi
+
+    log_success "Python ${py_ver} (OK)"
+
     if [ ! -d ".venv" ]; then
-        uv venv
+        if [ -f ".python-version" ]; then
+            uv venv --python "$(cat .python-version)"
+        else
+            uv venv
+        fi
         log_success "虚拟环境已创建 (.venv)"
     else
         log_info "虚拟环境已存在 (.venv)"

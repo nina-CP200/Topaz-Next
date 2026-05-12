@@ -77,6 +77,7 @@ mkdir -p data/raw data/models data/cache
 | **行业板块** | 28行业20日/5日动量排行（柱状图 + 表格） |
 | **我的组合** | 持仓增删改 + 盈亏计算 + 行业分布饼图 + 买卖建议 |
 | **说明** | 系统使用说明和评分体系详解 |
+| **设置** | 多客户 Slack 配置（Token + 频道），支持指定发送或一键群发 |
 
 前端技术栈：React 19 + TypeScript + Vite + Ant Design 6 + ECharts。后端自动托管前端静态文件，一个端口搞定。
 
