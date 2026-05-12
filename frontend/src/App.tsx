@@ -7,6 +7,7 @@ import Stocks from './pages/Stocks'
 import Sectors from './pages/Sectors'
 import Portfolio from './pages/Portfolio'
 import About from './pages/About'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
             <Route path="/sectors" element={<Sectors />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/about" element={<About />} />
+            <Route path="/settings" element={<Settings />} />
           </Route>
         </Routes>
       </BrowserRouter>

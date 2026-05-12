@@ -5,6 +5,7 @@ import {
   PieChartOutlined,
   WalletOutlined,
   QuestionCircleOutlined,
+  SettingOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
@@ -16,6 +17,7 @@ const menuItems = [
   { key: '/sectors', icon: <PieChartOutlined />, label: '行业板块' },
   { key: '/portfolio', icon: <WalletOutlined />, label: '我的组合' },
   { key: '/about', icon: <QuestionCircleOutlined />, label: '说明' },
+  { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ]
 
 export default function AppLayout() {

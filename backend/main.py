@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from backend.routers import market, analysis, sectors, portfolio
+from backend.routers import market, analysis, sectors, portfolio, settings
 
 app = FastAPI(title="Topaz-Next API", version="1.0.0")
 
@@ -23,6 +23,7 @@ app.include_router(market.router, prefix="/api/market", tags=["market"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(sectors.router, prefix="/api/sectors", tags=["sectors"])
 app.include_router(portfolio.router, prefix="/api/portfolio", tags=["portfolio"])
+app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
 
 
 @app.get("/api/health")

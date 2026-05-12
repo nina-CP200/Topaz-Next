@@ -3,9 +3,10 @@ import json
 import os
 import threading
 from datetime import datetime
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from src.analysis.query import load_analysis_results
 from src.analysis.daily import analyze_stocks
+from src.reports.sender import send_score_ranking
 from backend.routers.common import PROJECT_ROOT, patch_results
 
 router = APIRouter()
@@ -42,6 +43,89 @@ def daily_analysis():
 def analysis_status():
     with _lock:
         return dict(_status)
+
+
+@router.get("/report")
+def analysis_report():
+    data = load_analysis_results()
+    if data is None:
+        return {"error": "暂无分析结果", "text": ""}
+
+    results = data.get("results", data.get("all_results", []))
+    if not results:
+        return {"error": "暂无分析结果", "text": ""}
+
+    regime = data.get("market_regime", "sideways")
+    confidence = data.get("model_confidence", 0.5)
+    adv_ratio = data.get("advance_ratio", 0.5)
+    position = data.get("recommended_position", 0.5)
+    date = data.get("date", datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+    sorted_by_score = sorted(results, key=lambda x: x.get("composite_score", 0), reverse=True)
+
+    regime_names = {"bull": "📈 牛市", "bear": "📉 熊市", "sideways": "➡️ 震荡", "recovery": "📊 复苏", "pullback": "📉 回调"}
+    regime_name = regime_names.get(regime, regime)
+
+    lines = []
+    lines.append(f"📊 Topaz-Next 每日策略报告")
+    lines.append(f"⏱ {date}")
+    lines.append("")
+    lines.append(f"【市场环境】{regime_name}  |  模型置信度: {confidence:.0%}  |  上涨比例: {adv_ratio:.1%}")
+    lines.append(f"【建议仓位】{position:.0%}")
+    lines.append("")
+
+    buy_list = [r for r in sorted_by_score if r.get("composite_score", 0) >= 0.55]
+    sell_list = [r for r in sorted_by_score if r.get("composite_score", 0) < 0.40]
+
+    if buy_list:
+        lines.append("🟢 建议买入")
+        for i, s in enumerate(buy_list[:10], 1):
+            adv = s.get("advice", "")
+            score = s.get("composite_score", 0)
+            rsn = " | ".join(s.get("reasons", []))[:80]
+            pos = s.get("position_pct", 0)
+            lines.append(f"  #{i} {s['symbol']} {s['name']} ({s.get('industry','')})")
+            lines.append(f"     评分: {score:.3f} | 建议仓位: {pos:.0%} | {adv}")
+            if rsn:
+                lines.append(f"     理由: {rsn}")
+        lines.append("")
+
+    if sell_list:
+        lines.append("🔴 建议回避/卖出")
+        for i, s in enumerate(sell_list[:8], 1):
+            score = s.get("composite_score", 0)
+            adv = s.get("advice", "")
+            lines.append(f"  #{i} {s['symbol']} {s['name']}  评分: {score:.3f} | {adv}")
+        lines.append("")
+
+    buy_count = len(buy_list)
+    hold_count = len([r for r in sorted_by_score if 0.40 <= r.get("composite_score", 0) < 0.55])
+    sell_count = len(sell_list)
+    lines.append(f"📊 分布: 买入{buy_count} / 观望{hold_count} / 回避{sell_count}")
+    lines.append("")
+    lines.append("⚠️ 本分析仅供参考，不构成投资建议。市场有风险，投资需谨慎。")
+
+    return {"text": "\n".join(lines), "error": ""}
+
+
+@router.post("/send-slack")
+def send_to_slack():
+    data = load_analysis_results()
+    if data is None:
+        raise HTTPException(status_code=400, detail="暂无分析结果")
+
+    results = data.get("results", data.get("all_results", []))
+    if not results:
+        raise HTTPException(status_code=400, detail="暂无分析结果")
+
+    regime = data.get("market_regime", "sideways")
+    confidence = data.get("model_confidence", 0.5)
+    adv_ratio = data.get("advance_ratio", 0.5)
+
+    ok = send_score_ranking(results, regime, confidence, adv_ratio)
+    if ok:
+        return {"message": "报告已发送到 Slack"}
+    raise HTTPException(status_code=500, detail="Slack 发送失败，请检查 Token 配置")
 
 
 @router.post("/refresh")

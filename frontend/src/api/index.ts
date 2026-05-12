@@ -126,8 +126,38 @@ export async function getDailyAnalysis(): Promise<DailyAnalysis> {
   return r.data
 }
 
+export interface AnalysisReport {
+  text: string
+  error?: string
+}
+
+export async function getAnalysisReport(): Promise<AnalysisReport> {
+  const r = await api.get('/analysis/report')
+  return r.data
+}
+
+export async function sendSlackReport(): Promise<{ message: string }> {
+  const r = await api.post('/analysis/send-slack')
+  return r.data
+}
+
 export async function refreshAnalysis(): Promise<{ message: string }> {
   const r = await api.post('/analysis/refresh')
+  return r.data
+}
+
+export interface SlackConfig {
+  token: string
+  channel: string
+}
+
+export async function getSlackConfig(): Promise<SlackConfig> {
+  const r = await api.get('/settings/slack')
+  return r.data
+}
+
+export async function saveSlackConfig(cfg: SlackConfig): Promise<{ message: string }> {
+  const r = await api.put('/settings/slack', cfg)
   return r.data
 }
 

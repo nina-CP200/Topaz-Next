@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
-import { Table, Tag, Spin, Input, Select, Space, Button, message, Row, Col, Statistic, Card, Progress } from 'antd'
-import { ReloadOutlined, ArrowUpOutlined, ArrowDownOutlined } from '@ant-design/icons'
-import { getDailyAnalysis, refreshAnalysis } from '../api'
+import { Table, Tag, Spin, Input, Select, Space, Button, message, Row, Col, Statistic, Card, Progress, Modal } from 'antd'
+import { ReloadOutlined, ArrowUpOutlined, ArrowDownOutlined, SendOutlined, FileTextOutlined } from '@ant-design/icons'
+import { getDailyAnalysis, refreshAnalysis, getAnalysisReport, sendSlackReport } from '../api'
 import type { DailyAnalysis } from '../api'
 
 const adviceColors: Record<string, string> = {
@@ -21,6 +21,9 @@ export default function Stocks() {
   const [progress, setProgress] = useState(0)
   const [search, setSearch] = useState('')
   const [adviceFilter, setAdviceFilter] = useState<string | undefined>(undefined)
+  const [reportText, setReportText] = useState('')
+  const [reportModal, setReportModal] = useState(false)
+  const [sending, setSending] = useState(false)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const load = () => {
@@ -165,7 +168,40 @@ export default function Stocks() {
         <Button icon={<ReloadOutlined />} loading={refreshing} onClick={handleRefresh}>
           重新分析
         </Button>
+        {data && (
+          <>
+            <Button icon={<FileTextOutlined />} onClick={async () => {
+              const r = await getAnalysisReport()
+              if (r.text) { setReportText(r.text); setReportModal(true) }
+              else message.error(r.error || '暂无报告')
+            }}>生成报告</Button>
+            <Button icon={<SendOutlined />} loading={sending} onClick={async () => {
+              setSending(true)
+              try {
+                const r = await sendSlackReport()
+                message.success(r.message)
+              } catch (e: any) {
+                message.error(e?.response?.data?.detail || '发送失败')
+              }
+              setSending(false)
+            }}>发送到Slack</Button>
+          </>
+        )}
       </Space>
+
+      <Modal
+        title="策略报告"
+        open={reportModal}
+        onCancel={() => setReportModal(false)}
+        footer={null}
+        width={700}
+      >
+        <pre style={{
+          background: '#1f1f1f', color: '#d9d9d9', padding: 16,
+          borderRadius: 8, fontSize: 13, lineHeight: 1.7, whiteSpace: 'pre-wrap',
+          maxHeight: 500, overflow: 'auto',
+        }}>{reportText}</pre>
+      </Modal>
 
       {loading ? <Spin size="large" style={{ display: 'block', marginTop: 80 }} /> : (
         <Table
