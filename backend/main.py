@@ -1,10 +1,11 @@
 from __future__ import annotations
 import sys
 import os
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from backend.routers import market, analysis, sectors, portfolio, settings
@@ -13,8 +14,8 @@ app = FastAPI(title="Topaz-Next API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -31,14 +32,21 @@ def health():
     return {"status": "ok"}
 
 
-FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+FRONTEND_DIST = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))) / "frontend" / "dist"
+
+
+def _safe_path(base: Path, *parts: str) -> Path:
+    target = base.joinpath(*parts).resolve()
+    if not str(target).startswith(str(base.resolve())):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return target
 
 
 @app.get("/assets/{rest:path}")
 def serve_assets(rest: str):
-    path = os.path.join(FRONTEND_DIST, "assets", rest)
-    if os.path.isfile(path):
-        return FileResponse(path)
+    path = _safe_path(FRONTEND_DIST, "assets", rest)
+    if path.is_file():
+        return FileResponse(str(path))
     return _serve_index()
 
 
@@ -46,14 +54,14 @@ def serve_assets(rest: str):
 def serve_frontend(filename: str):
     if filename.startswith("api/"):
         return {"error": "not found"}
-    path = os.path.join(FRONTEND_DIST, filename)
-    if os.path.isfile(path):
-        return FileResponse(path)
+    path = _safe_path(FRONTEND_DIST, filename)
+    if path.is_file():
+        return FileResponse(str(path))
     return _serve_index()
 
 
 def _serve_index():
-    index_path = os.path.join(FRONTEND_DIST, "index.html")
-    if os.path.isfile(index_path):
-        return FileResponse(index_path, media_type="text/html")
+    index_path = FRONTEND_DIST / "index.html"
+    if index_path.is_file():
+        return FileResponse(str(index_path), media_type="text/html")
     return {"error": "frontend not built. run: cd frontend && npm run build"}

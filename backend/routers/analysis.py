@@ -134,8 +134,8 @@ def _send_slack_report(token: str, channel: str, results: list, regime: str, con
         if resp.get("ok"):
             return ""
         return f"Slack API 错误: {resp.get('error', 'unknown')}"
-    except Exception as e:
-        return str(e)
+    except Exception:
+        return "Slack 请求异常（网络或 API 错误）"
 
 
 @router.post("/send-slack")
