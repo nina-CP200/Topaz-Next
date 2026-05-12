@@ -98,6 +98,7 @@ us_*.json
 # 分析结果（运行时生成）
 data/raw/latest_analysis_results.json
 data/raw/analysis_status.json
+data/raw/slack_configs.json
 
 # 前端
 frontend/node_modules/

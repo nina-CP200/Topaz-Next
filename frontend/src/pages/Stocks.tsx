@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
-import { Table, Tag, Spin, Input, Select, Space, Button, message, Row, Col, Statistic, Card, Progress, Modal } from 'antd'
-import { ReloadOutlined, ArrowUpOutlined, ArrowDownOutlined, SendOutlined, FileTextOutlined } from '@ant-design/icons'
-import { getDailyAnalysis, refreshAnalysis, getAnalysisReport, sendSlackReport } from '../api'
-import type { DailyAnalysis } from '../api'
+import { Table, Tag, Spin, Input, Select, Space, Button, message, Row, Col, Statistic, Card, Progress, Modal, Dropdown } from 'antd'
+import { ReloadOutlined, ArrowUpOutlined, ArrowDownOutlined, SendOutlined, FileTextOutlined, DownOutlined } from '@ant-design/icons'
+import { getDailyAnalysis, refreshAnalysis, getAnalysisReport, sendSlackReport, listSlackConfigs } from '../api'
+import type { DailyAnalysis, SlackConfigItem } from '../api'
 
 const adviceColors: Record<string, string> = {
   '强烈买入': '#f5222d',
@@ -24,6 +24,7 @@ export default function Stocks() {
   const [reportText, setReportText] = useState('')
   const [reportModal, setReportModal] = useState(false)
   const [sending, setSending] = useState(false)
+  const [slackConfigs, setSlackConfigs] = useState<SlackConfigItem[]>([])
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const load = () => {
@@ -34,8 +35,25 @@ export default function Stocks() {
       .finally(() => setLoading(false))
   }
 
+  const doSend = async (config?: string) => {
+    setSending(true)
+    try {
+      const r = await sendSlackReport(config)
+      if (r.errors?.length) {
+        message.warning({ content: r.message, duration: 4 })
+        r.errors.forEach(e => message.error(e))
+      } else {
+        message.success(r.message)
+      }
+    } catch (e: any) {
+      message.error(e?.response?.data?.detail || '发送失败')
+    }
+    setSending(false)
+  }
+
   useEffect(() => {
     load()
+    listSlackConfigs().then(r => setSlackConfigs(r.configs || [])).catch(() => {})
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
@@ -175,16 +193,24 @@ export default function Stocks() {
               if (r.text) { setReportText(r.text); setReportModal(true) }
               else message.error(r.error || '暂无报告')
             }}>生成报告</Button>
-            <Button icon={<SendOutlined />} loading={sending} onClick={async () => {
-              setSending(true)
-              try {
-                const r = await sendSlackReport()
-                message.success(r.message)
-              } catch (e: any) {
-                message.error(e?.response?.data?.detail || '发送失败')
-              }
-              setSending(false)
-            }}>发送到Slack</Button>
+            <Dropdown
+              menu={{
+                items: [
+                  ...slackConfigs.map(c => ({
+                    key: c.name, label: c.name,
+                    onClick: () => doSend(c.name),
+                  })),
+                  slackConfigs.length > 1
+                    ? { key: '__all__', label: '发送给全部', onClick: () => doSend() }
+                    : null,
+                ].filter(Boolean) as any,
+              }}
+              disabled={!slackConfigs.length}
+            >
+              <Button loading={sending} icon={<SendOutlined />}>
+                {slackConfigs.length ? `发送到 Slack (${slackConfigs.length})` : 'Slack 未配置'} <DownOutlined />
+              </Button>
+            </Dropdown>
           </>
         )}
       </Space>

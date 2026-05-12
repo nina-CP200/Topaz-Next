@@ -1,50 +1,43 @@
 from __future__ import annotations
+import json
 import os
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 from backend.routers.common import PROJECT_ROOT
 
 router = APIRouter()
 
-ENV_FILE = os.path.join(PROJECT_ROOT, ".env")
+CONFIG_FILE = os.path.join(PROJECT_ROOT, "data/raw/slack_configs.json")
 
 
-class SlackConfig(BaseModel):
-    token: str = ""
-    channel: str = ""
+class SlackConfigItem(BaseModel):
+    name: str
+    token: str
+    channel: str
 
 
-def _load_env() -> dict:
-    vars = {}
-    if os.path.exists(ENV_FILE):
-        with open(ENV_FILE) as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#") or "=" not in line:
-                    continue
-                k, v = line.split("=", 1)
-                vars[k.strip()] = v.strip()
-    return vars
+def _load() -> list[dict]:
+    if not os.path.exists(CONFIG_FILE):
+        return []
+    with open(CONFIG_FILE, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save(configs: list[dict]):
+    os.makedirs(os.path.dirname(CONFIG_FILE), exist_ok=True)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(configs, f, indent=2, ensure_ascii=False)
 
 
 @router.get("/slack")
-def get_slack_config():
-    env = _load_env()
-    return SlackConfig(
-        token=env.get("SLACK_BOT_TOKEN", ""),
-        channel=env.get("SLACK_CHANNEL", ""),
-    )
+def list_configs():
+    return {"configs": _load()}
 
 
 @router.put("/slack")
-def save_slack_config(cfg: SlackConfig):
-    existing = _load_env()
-    existing["SLACK_BOT_TOKEN"] = cfg.token
-    existing["SLACK_CHANNEL"] = cfg.channel
-
-    os.makedirs(os.path.dirname(ENV_FILE) or ".", exist_ok=True)
-    with open(ENV_FILE, "w") as f:
-        for k, v in existing.items():
-            if v:
-                f.write(f"{k}={v}\n")
-    return {"message": "Slack 配置已保存"}
+def save_configs(data: list[SlackConfigItem]):
+    configs = []
+    for item in data:
+        configs.append({"name": item.name, "token": item.token, "channel": item.channel})
+    _save(configs)
+    return {"message": f"已保存 {len(configs)} 个 Slack 配置"}

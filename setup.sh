@@ -74,8 +74,50 @@ detect_mode() {
     fi
 }
 
+check_directory() {
+    if [ "$IS_REMOTE" = true ]; then
+        return
+    fi
+
+    local dir_name
+    dir_name="$(basename "$PROJECT_DIR")"
+
+    local bad_dirs=("/" "/home" "/root" "/tmp" "/Users" "/Users/Shared" "/opt" "/etc" "/var")
+    if [[ "$(uname)" == MINGW* ]] || [[ "$(uname)" == MSYS* ]]; then
+        bad_dirs+=("/c" "/d" "/e")
+    fi
+
+    for bad in "${bad_dirs[@]}"; do
+        if [ "$PROJECT_DIR" = "$bad" ] || [ "$PROJECT_DIR" = "$bad/" ]; then
+            log_error "检测到系统根目录 ($PROJECT_DIR)，请先创建项目文件夹后再运行"
+            log_info "正确做法："
+            log_info "  mkdir topaz-next && cd topaz-next"
+            log_info "  bash setup.sh"
+            exit 1
+        fi
+    done
+
+    local home_dir="$HOME"
+    if [ "$PROJECT_DIR" = "$home_dir" ] || [ "$PROJECT_DIR" = "$home_dir/" ]; then
+        log_error "检测到家目录 ($PROJECT_DIR)，请先在独立文件夹中运行"
+        log_info "正确做法："
+        log_info "  mkdir topaz-next && cd topaz-next"
+        log_info "  bash setup.sh"
+        exit 1
+    fi
+
+    for dangerous in "Desktop" "Downloads" "Documents" "desktop" "downloads" "documents" "桌面" "下载" "文档"; do
+        if [[ "$dir_name" == "$dangerous" ]]; then
+            log_error "检测到系统文件夹 ($dir_name)，请先在独立文件夹中运行"
+            log_info "正确做法："
+            log_info "  mkdir topaz-next && cd topaz-next"
+            log_info "  bash setup.sh"
+            exit 1
+        fi
+    done
+}
+
 check_uv() {
-    _STEP=0
     log_step "检查 uv 环境"
 
     if check_command uv; then
@@ -173,7 +215,14 @@ install_frontend_deps() {
         return
     fi
 
-    log_step "安装前端依赖（含 Node.js 检测）"
+    log_step "安装前端依赖（Web 仪表盘）"
+
+    read -p "是否部署 Web 仪表盘？(y/n, 默认 y): " deploy_frontend
+    if [ "$deploy_frontend" = "n" ] || [ "$deploy_frontend" = "N" ]; then
+        log_info "跳过前端安装，仅 CLI 模式"
+        CLI_ONLY=true
+        return
+    fi
 
     if ! check_command node; then
         log_warn "未找到 Node.js，跳过前端安装"
@@ -359,6 +408,7 @@ main() {
     echo ""
 
     detect_mode
+    check_directory
     check_uv
     detect_network
     clone_repo

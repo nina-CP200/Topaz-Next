@@ -3,10 +3,11 @@ import json
 import os
 import threading
 from datetime import datetime
-from fastapi import APIRouter, HTTPException
+import requests
+from fastapi import APIRouter, HTTPException, Query
 from src.analysis.query import load_analysis_results
 from src.analysis.daily import analyze_stocks
-from src.reports.sender import send_score_ranking
+from src.reports.sender import build_score_ranking_blocks
 from backend.routers.common import PROJECT_ROOT, patch_results
 
 router = APIRouter()
@@ -56,6 +57,8 @@ def analysis_report():
         return {"error": "暂无分析结果", "text": ""}
 
     regime = data.get("market_regime", "sideways")
+    results = patch_results(results, regime)
+
     confidence = data.get("model_confidence", 0.5)
     adv_ratio = data.get("advance_ratio", 0.5)
     position = data.get("recommended_position", 0.5)
@@ -108,8 +111,35 @@ def analysis_report():
     return {"text": "\n".join(lines), "error": ""}
 
 
+SLACK_CONFIGS_FILE = os.path.join(PROJECT_ROOT, "data/raw/slack_configs.json")
+
+
+def _send_slack_report(token: str, channel: str, results: list, regime: str, confidence: float, adv_ratio: float) -> str:
+    if not token:
+        return "Token 为空"
+    blocks = build_score_ranking_blocks(results, regime, confidence, adv_ratio)
+    payload = {
+        "channel": channel,
+        "blocks": blocks,
+        "text": f"Topaz-Next 评分排名 - {datetime.now().strftime('%Y-%m-%d')}",
+    }
+    try:
+        r = requests.post(
+            "https://slack.com/api/chat.postMessage",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json=payload,
+            timeout=30,
+        )
+        resp = r.json()
+        if resp.get("ok"):
+            return ""
+        return f"Slack API 错误: {resp.get('error', 'unknown')}"
+    except Exception as e:
+        return str(e)
+
+
 @router.post("/send-slack")
-def send_to_slack():
+def send_to_slack(config: str = Query("", description="配置名称，空=发送给所有")):
     data = load_analysis_results()
     if data is None:
         raise HTTPException(status_code=400, detail="暂无分析结果")
@@ -119,13 +149,42 @@ def send_to_slack():
         raise HTTPException(status_code=400, detail="暂无分析结果")
 
     regime = data.get("market_regime", "sideways")
+    results = patch_results(results, regime)
+
     confidence = data.get("model_confidence", 0.5)
     adv_ratio = data.get("advance_ratio", 0.5)
 
-    ok = send_score_ranking(results, regime, confidence, adv_ratio)
-    if ok:
-        return {"message": "报告已发送到 Slack"}
-    raise HTTPException(status_code=500, detail="Slack 发送失败，请检查 Token 配置")
+    configs = []
+    if os.path.exists(SLACK_CONFIGS_FILE):
+        with open(SLACK_CONFIGS_FILE) as f:
+            configs = json.load(f)
+
+    if not configs:
+        raise HTTPException(status_code=400, detail="未配置 Slack，请先在设置页添加")
+
+    if config:
+        targets = [c for c in configs if c["name"] == config]
+        if not targets:
+            raise HTTPException(status_code=404, detail=f"未找到配置: {config}")
+    else:
+        targets = configs
+
+    ok = 0
+    fail = 0
+    errors = []
+    for c in targets:
+        err = _send_slack_report(c["token"], c["channel"], results, regime, confidence, adv_ratio)
+        if err:
+            fail += 1
+            errors.append(f"{c['name']}: {err}")
+        else:
+            ok += 1
+
+    if fail == 0:
+        return {"message": f"报告已发送到 {ok} 个配置"}
+    elif ok > 0:
+        return {"message": f"部分成功: {ok} 成功, {fail} 失败", "errors": errors}
+    raise HTTPException(status_code=500, detail=f"全部发送失败: {'; '.join(errors)}")
 
 
 @router.post("/refresh")

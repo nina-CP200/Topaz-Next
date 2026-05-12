@@ -136,28 +136,35 @@ export async function getAnalysisReport(): Promise<AnalysisReport> {
   return r.data
 }
 
-export async function sendSlackReport(): Promise<{ message: string }> {
-  const r = await api.post('/analysis/send-slack')
+export interface SlackConfigItem {
+  name: string
+  token: string
+  channel: string
+}
+
+export async function listSlackConfigs(): Promise<{ configs: SlackConfigItem[] }> {
+  const r = await api.get('/settings/slack')
+  return r.data
+}
+
+export async function saveSlackConfigs(configs: SlackConfigItem[]): Promise<{ message: string }> {
+  const r = await api.put('/settings/slack', configs)
+  return r.data
+}
+
+export interface SendSlackResult {
+  message: string
+  errors?: string[]
+}
+
+export async function sendSlackReport(config?: string): Promise<SendSlackResult> {
+  const params = config ? { config } : {}
+  const r = await api.post('/analysis/send-slack', null, { params })
   return r.data
 }
 
 export async function refreshAnalysis(): Promise<{ message: string }> {
   const r = await api.post('/analysis/refresh')
-  return r.data
-}
-
-export interface SlackConfig {
-  token: string
-  channel: string
-}
-
-export async function getSlackConfig(): Promise<SlackConfig> {
-  const r = await api.get('/settings/slack')
-  return r.data
-}
-
-export async function saveSlackConfig(cfg: SlackConfig): Promise<{ message: string }> {
-  const r = await api.put('/settings/slack', cfg)
   return r.data
 }
 
